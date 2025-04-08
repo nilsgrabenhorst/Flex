@@ -3,7 +3,9 @@ import SwiftUI
 
 @Feature
 struct CounterFeature {
+    
     @State private var _counter = 0
+    @State private var name = "Trudbert"
     
     @Outlet var count: Int { _counter }
     @Outlet var isResettable: Bool { _counter != 0 }
@@ -20,58 +22,47 @@ struct CounterFeature {
         _counter = 0
     }
     
+    func changeName() {
+        name = (name == "Trudbert") ? "Möpelkötter" : "Trudbert"
+    }
+    
     @MainActor
     var presentation: some View {
         MyPresentation()
-            .environment(outs)
-            .environment(ins)
+            .environment(FeatureBox(self))
     }
 }
 
-extension CounterFeature {
-    @Observable
-    class Outs {
-        private let feature: CounterFeature
-        
-        init(feature: CounterFeature) {
-            self.feature = feature
-        }
-        
-        var count: Int { feature.count }
-        var isResettable: Bool { feature.isResettable }
+@Observable
+class FeatureBox<F: CounterFeatureOutlets & CounterFeatureActions> {
+    private let feature: F!
+    
+    init(_ feature: F?) {
+        self.feature = feature
     }
     
-    var outs: Outs { Outs(feature: self) }
+    var outlets: CounterFeatureOutlets { feature }
+    var actions: CounterFeatureActions { feature }
 }
 
-extension CounterFeature {
-    @Observable
-    class Ins {
-        private let feature: CounterFeature
-        
-        init(feature: CounterFeature) {
-            self.feature = feature
-        }
-        
-        func increment() {
-            feature.increment()
-        }
-        
-        func decrement() {
-            feature.decrement()
-        }
-        
-        func reset() {
-            feature.reset()
-        }
-    }
-    
-    var ins: Ins { Ins(feature: self) }
+protocol CounterFeatureOutlets {
+    var count: Int { get }
+    var isResettable: Bool { get }
 }
+
+protocol CounterFeatureActions {
+    func increment()
+    func decrement()
+    func reset()
+}
+
+extension CounterFeature: CounterFeatureOutlets {}
+extension CounterFeature: CounterFeatureActions {}
 
 struct MyPresentation: View {
-    @Environment(CounterFeature.Outs.self) var outlets
-    @Environment(CounterFeature.Ins.self) var actions
+    @Environment(FeatureBox<CounterFeature>.self) private var _feature
+    var outlets: CounterFeatureOutlets { _feature.outlets }
+    var actions: CounterFeatureActions { _feature.actions }
     
     var body: some View {
         VStack {
