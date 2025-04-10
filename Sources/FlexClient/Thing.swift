@@ -3,12 +3,12 @@ import SwiftUI
 
 @Feature
 struct CounterFeature {
-    
     @State private var _counter = 0
     @State private var name = "Trudbert"
     
     @Outlet var count: Int { _counter }
     @Outlet var isResettable: Bool { _counter != 0 }
+    @Outlet var greeting: String = "Hello"
     
     func increment() {
         _counter += 1
@@ -28,41 +28,15 @@ struct CounterFeature {
     
     @MainActor
     var presentation: some View {
-        MyPresentation()
-            .environment(FeatureBox(self))
+        CounterView()
+//                .environment(CounterFeatureActions(self))
+//                .environment(CounterFeatureOutlets(self))
+        
     }
 }
 
-@Observable
-class FeatureBox<F: CounterFeatureOutlets & CounterFeatureActions> {
-    private let feature: F!
-    
-    init(_ feature: F?) {
-        self.feature = feature
-    }
-    
-    var outlets: CounterFeatureOutlets { feature }
-    var actions: CounterFeatureActions { feature }
-}
-
-protocol CounterFeatureOutlets {
-    var count: Int { get }
-    var isResettable: Bool { get }
-}
-
-protocol CounterFeatureActions {
-    func increment()
-    func decrement()
-    func reset()
-}
-
-extension CounterFeature: CounterFeatureOutlets {}
-extension CounterFeature: CounterFeatureActions {}
-
-struct MyPresentation: View {
-    @Environment(FeatureBox<CounterFeature>.self) private var _feature
-    var outlets: CounterFeatureOutlets { _feature.outlets }
-    var actions: CounterFeatureActions { _feature.actions }
+@Presentation<CounterFeature>
+struct CounterView: View {
     
     var body: some View {
         VStack {
@@ -70,16 +44,17 @@ struct MyPresentation: View {
             
             HStack {
                 Button("-") {
-                    actions.decrement()
+//                    actions.decrement()
                 }
                 Button("+") {
-                    actions.increment()
+//                    actions.increment()
                 }
             }
             
             Button("reset") {
-                actions.reset()
-            }.disabled(!outlets.isResettable)
+//                actions.reset()
+            }
+//            .disabled(!outlets.isResettable)
         }
     }
 }
@@ -88,3 +63,4 @@ struct MyPresentation: View {
     CounterFeature()
         .padding()
 }
+

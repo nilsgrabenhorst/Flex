@@ -6,7 +6,6 @@
 //
 
 import XCTest
-//import Testing
 import SwiftSyntaxMacros
 import SwiftSyntaxMacrosTestSupport
 import FlexMacros
@@ -16,7 +15,7 @@ final class FeatureTests: XCTestCase {
     """
     @Feature
     struct SomeFeature {
-        @Outlet let name = "Trudbert"
+        @Outlet let name: String = "Trudbert"
     }
     """
     
@@ -27,11 +26,7 @@ final class FeatureTests: XCTestCase {
             expandedSource:
                     """
                     struct SomeFeature {
-                        let name = "Trudbert"
-                    
-                        var outlets: Int {
-                            42
-                        }
+                        let name: String = "Trudbert"
                     }
                     """
             ,
@@ -78,4 +73,5 @@ final class FeatureTests: XCTestCase {
 let testMacros: [String: Macro.Type] = [
     "Outlet": OutletMacro.self,
     "Feature": FeatureMacro.self,
+    "Presentation": PresentationMacro.self,
 ]

@@ -13,5 +13,6 @@ struct FlexPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
         FeatureMacro.self,
         OutletMacro.self,
+        PresentationMacro.self,
     ]
 }
