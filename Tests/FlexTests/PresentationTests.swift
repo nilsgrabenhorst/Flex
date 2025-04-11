@@ -18,7 +18,7 @@ final class PresentationTests: XCTestCase {
         @Outlet let name: String = "Trudbert"
     
         @Action
-        func doStuff() {}
+        internal func doStuff(_ hiddenName: Int, with number: Int = 0, freak: String) {}
     }
     
     @Presentation<SomeFeature>

@@ -99,6 +99,23 @@ public struct FeatureMacro: MemberMacro, PeerMacro, ExtensionMacro {
         
         let actionMethodDecls  = structDecl.methodDecls.filter(\.isAction)
         
+        let actions: [FunctionDeclSyntax] = try actionMethodDecls.map {
+            let modifiers = $0.modifiers
+            let name = $0.name
+            let signature = $0.signature
+            let parameters = signature.parameterClause.parameters
+            let arguments = parameters.map {
+                let argumentName = $0.firstName.tokenKind == .wildcard ? "" : ($0.firstName.text + ": ")
+                let valueName = $0.secondName?.text ?? $0.firstName.text
+                return argumentName + valueName
+            }
+                .joined(separator: ", ")
+            
+            return try FunctionDeclSyntax("\(modifiers)func \(name)\(signature)") {
+                "feature.\(name)(\(raw: arguments))"
+            }
+        }
+        
         let outletIdentifiersAndTypes: [(IdentifierPatternSyntax, TypeAnnotationSyntax)] = outletBindings.compactMap { binding -> (IdentifierPatternSyntax, TypeAnnotationSyntax)? in
             guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self) else {
                 context.diagnose(
@@ -147,11 +164,7 @@ public struct FeatureMacro: MemberMacro, PeerMacro, ExtensionMacro {
                         self.feature = feature
                     }
                     """
-                    for (identifier, type) in outletIdentifiersAndTypes {
-                        try VariableDeclSyntax("var \(identifier)\(type)") {
-                            "feature.\(identifier)"
-                        }
-                    }
+                    actions
                 }
             )
         ]

@@ -26,8 +26,10 @@ public struct PresentationMacro: MemberMacro {
         }
         
         return [
-            "@Environment(\(raw: featureType.name.text)Outlets.self) private var outlets",
-            "@Environment(\(raw: featureType.name.text)Actions.self) private var actions",
+            """
+            @Environment(\(raw: featureType.name.text)Outlets.self) private var outlets
+            @Environment(\(raw: featureType.name.text)Actions.self) private var actions
+            """
         ]
     }
 }

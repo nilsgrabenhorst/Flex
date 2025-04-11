@@ -3,59 +3,72 @@ import SwiftUI
 
 @Feature
 struct CounterFeature {
-    @State private var _counter = 0
+    let presentation = CounterView()
+    
+    @State private var counter = 0
     @State private var name = "Trudbert"
     
-    @Outlet var count: Int { _counter }
-    @Outlet var isResettable: Bool { _counter != 0 }
+    @Outlet var count: Int { counter }
+    @Outlet var isResettable: Bool { counter != 0 }
     @Outlet var greeting: String = "Hello"
+    @Outlet var canSetTo42: Bool { counter != 42 }
     
     @Action
-    func increment() {
-        _counter += 1
-    }
+    func increment() { counter += 1 }
     
     @Action
-    func decrement() {
-        _counter -= 1
-    }
+    func decrement() { counter -= 1 }
     
     @Action
-    func reset() {
-        _counter = 0
-    }
+    func reset() { counter = 0 }
     
+    @Action
+    func set(_ value: Int) { counter = value }
+    
+    @Action
     func changeName() {
         name = (name == "Trudbert") ? "Möpelkötter" : "Trudbert"
-    }
-    
-    @MainActor
-    var presentation: some View {
-        CounterView()
     }
 }
 
 @Presentation<CounterFeature>
 struct CounterView: View {
-    
     var body: some View {
         VStack {
-            Text("\(outlets.count)")
-            
             HStack {
                 Button("-") {
-//                    actions.decrement()
+                    actions.decrement()
                 }
+                Spacer()
+                Text("\(outlets.count)")
+                Spacer()
                 Button("+") {
-//                    actions.increment()
+                    actions.increment()
                 }
             }
             
-            Button("reset") {
-//                actions.reset()
+            Divider()
+                .padding(.vertical)
+            
+            HStack {
+                Button("reset") {
+                    actions.reset()
+                }
+                .disabled(!outlets.isResettable)
+                
+                Spacer()
+                
+                Button("42") {
+                    actions.set(42)
+                }
+                .disabled(!outlets.canSetTo42)
             }
-//            .disabled(!outlets.isResettable)
+            
+            Button("Change name") {
+                actions.changeName()
+            }
         }
+        .frame(maxWidth: 100)
     }
 }
 
