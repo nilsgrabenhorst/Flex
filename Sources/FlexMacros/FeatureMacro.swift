@@ -58,62 +58,11 @@ public struct FeatureMacro: MemberMacro, PeerMacro, ExtensionMacro {
             return []
         }
         
-        let actionDecls = structDecl.methodDecls.filter(\.isAction)
-        
         let outletBindings = outletVariableDecls.flatMap {
             $0.bindings
         }
         
-        let identifiersAndTypes: [(IdentifierPatternSyntax, TypeAnnotationSyntax)] = outletBindings.compactMap { binding -> (IdentifierPatternSyntax, TypeAnnotationSyntax)? in
-            guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self) else {
-                context.diagnose(
-                    Diagnostic(
-                        node: binding.pattern,
-                        message: FeatureMacroDiagnostic.notAnIdentifier
-                    )
-                )
-                return nil
-            }
-            guard let type = binding.typeAnnotation else {
-                context.diagnose(
-                    Diagnostic(
-                        node: identifier,
-                        message: FeatureMacroDiagnostic.typeAnnotationMissing
-                    )
-                )
-                return nil
-            }
-            return (identifier, type)
-        }
-        
         return try [
-//            ExtensionDeclSyntax("extension \(structDecl.name)") {
-//                DeclSyntax(
-//                    try ClassDeclSyntax("@MainActor @Observable public class Outlets") {
-//                        "public let feature: \(raw: name)"
-//                        """
-//                        init(_ feature: \(name)) {
-//                            self.feature = feature
-//                        }
-//                        """
-//                        for (identifier, type) in identifiersAndTypes {
-//                            try VariableDeclSyntax("var \(identifier)\(type)") {
-//                                "feature.\(identifier)"
-//                            }
-//                        }
-//                    }
-//                )
-//                DeclSyntax(
-//                    try ClassDeclSyntax("@MainActor @Observable public class \(raw: name.text + "Actions")") {
-//                        "public let feature: \(raw: name)"
-//                        """
-//                        init(_ feature: \(name)) {
-//                            self.feature = feature
-//                        }
-//                        """
-//                    }
-//                )
-//            },
             ExtensionDeclSyntax("extension \(structDecl.name): Flex.Feature") { "" },
             ExtensionDeclSyntax("extension \(structDecl.name): SwiftUI.View") {
                 """
@@ -126,7 +75,6 @@ public struct FeatureMacro: MemberMacro, PeerMacro, ExtensionMacro {
             },
         ]
     }
-    
     
     // MARK: Peers
     
@@ -151,7 +99,7 @@ public struct FeatureMacro: MemberMacro, PeerMacro, ExtensionMacro {
         
         let actionMethodDecls  = structDecl.methodDecls.filter(\.isAction)
         
-        let identifiersAndTypes: [(IdentifierPatternSyntax, TypeAnnotationSyntax)] = outletBindings.compactMap { binding -> (IdentifierPatternSyntax, TypeAnnotationSyntax)? in
+        let outletIdentifiersAndTypes: [(IdentifierPatternSyntax, TypeAnnotationSyntax)] = outletBindings.compactMap { binding -> (IdentifierPatternSyntax, TypeAnnotationSyntax)? in
             guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self) else {
                 context.diagnose(
                     Diagnostic(
@@ -199,7 +147,7 @@ public struct FeatureMacro: MemberMacro, PeerMacro, ExtensionMacro {
                         self.feature = feature
                     }
                     """
-                    for (identifier, type) in identifiersAndTypes {
+                    for (identifier, type) in outletIdentifiersAndTypes {
                         try VariableDeclSyntax("var \(identifier)\(type)") {
                             "feature.\(identifier)"
                         }
