@@ -12,6 +12,9 @@ public macro Presentation<F: Feature>() = #externalMacro(module: "FlexMacros", t
 @attached(peer)
 public macro Outlet() = #externalMacro(module: "FlexMacros", type: "OutletMacro")
 
+@attached(peer)
+public macro Action() = #externalMacro(module: "FlexMacros", type: "ActionMacro")
+
 
 
 import SwiftUI

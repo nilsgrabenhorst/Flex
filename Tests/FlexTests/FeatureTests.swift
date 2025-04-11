@@ -74,4 +74,5 @@ let testMacros: [String: Macro.Type] = [
     "Outlet": OutletMacro.self,
     "Feature": FeatureMacro.self,
     "Presentation": PresentationMacro.self,
+    "Action": ActionMacro.self,
 ]

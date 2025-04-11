@@ -16,6 +16,9 @@ final class PresentationTests: XCTestCase {
     @Feature
     struct SomeFeature {
         @Outlet let name: String = "Trudbert"
+    
+        @Action
+        func doStuff() {}
     }
     
     @Presentation<SomeFeature>

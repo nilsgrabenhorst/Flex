@@ -10,14 +10,17 @@ struct CounterFeature {
     @Outlet var isResettable: Bool { _counter != 0 }
     @Outlet var greeting: String = "Hello"
     
+    @Action
     func increment() {
         _counter += 1
     }
     
+    @Action
     func decrement() {
         _counter -= 1
     }
     
+    @Action
     func reset() {
         _counter = 0
     }
@@ -29,9 +32,6 @@ struct CounterFeature {
     @MainActor
     var presentation: some View {
         CounterView()
-//                .environment(CounterFeatureActions(self))
-//                .environment(CounterFeatureOutlets(self))
-        
     }
 }
 

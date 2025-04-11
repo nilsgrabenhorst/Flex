@@ -58,6 +58,8 @@ public struct FeatureMacro: MemberMacro, PeerMacro, ExtensionMacro {
             return []
         }
         
+        let actionDecls = structDecl.methodDecls.filter(\.isAction)
+        
         let outletBindings = outletVariableDecls.flatMap {
             $0.bindings
         }
@@ -143,13 +145,11 @@ public struct FeatureMacro: MemberMacro, PeerMacro, ExtensionMacro {
         let name = structDecl.name
         
         let outletVariableDecls = structDecl.variableDecls.filter(\.isOutlet)
-        guard !outletVariableDecls.isEmpty else {
-            return []
-        }
-        
         let outletBindings = outletVariableDecls.flatMap {
             $0.bindings
         }
+        
+        let actionMethodDecls  = structDecl.methodDecls.filter(\.isAction)
         
         let identifiersAndTypes: [(IdentifierPatternSyntax, TypeAnnotationSyntax)] = outletBindings.compactMap { binding -> (IdentifierPatternSyntax, TypeAnnotationSyntax)? in
             guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self) else {
@@ -174,8 +174,25 @@ public struct FeatureMacro: MemberMacro, PeerMacro, ExtensionMacro {
         }
         
         return [
+            // TODO: only if we have outlets
             DeclSyntax(
                 try ClassDeclSyntax("@MainActor @Observable public class \(raw: name.text + "Outlets")") {
+                    "private let feature: \(raw: name)"
+                    """
+                    init(_ feature: \(name)) {
+                        self.feature = feature
+                    }
+                    """
+                    for (identifier, type) in outletIdentifiersAndTypes {
+                        try VariableDeclSyntax("var \(identifier)\(type)") {
+                            "feature.\(identifier)"
+                        }
+                    }
+                }
+            ),
+            // TODO: Only if we have actions
+            DeclSyntax(
+                try ClassDeclSyntax("@MainActor @Observable public class \(raw: name.text + "Actions")") {
                     "private let feature: \(raw: name)"
                     """
                     init(_ feature: \(name)) {
@@ -187,16 +204,6 @@ public struct FeatureMacro: MemberMacro, PeerMacro, ExtensionMacro {
                             "feature.\(identifier)"
                         }
                     }
-                }
-            ),
-            DeclSyntax(
-                try ClassDeclSyntax("@MainActor @Observable public class \(raw: name.text + "Actions")") {
-                    "private let feature: \(raw: name)"
-                    """
-                    init(_ feature: \(name)) {
-                        self.feature = feature
-                    }
-                    """
                 }
             )
         ]
@@ -236,6 +243,11 @@ extension StructDeclSyntax {
         memberBlock.members
             .compactMap { $0.decl.as(VariableDeclSyntax.self) }
     }
+    
+    var methodDecls: [FunctionDeclSyntax] {
+        memberBlock.members
+            .compactMap { $0.decl.as(FunctionDeclSyntax.self) }
+    }
 }
 
 extension VariableDeclSyntax {
@@ -244,5 +256,14 @@ extension VariableDeclSyntax {
             .compactMap { $0.as(AttributeSyntax.self) }
             .compactMap { $0.attributeName.as(IdentifierTypeSyntax.self) }
             .contains { $0.name.text == "Outlet" }
+    }
+}
+
+extension FunctionDeclSyntax {
+    var isAction: Bool {
+        attributes
+            .compactMap { $0.as(AttributeSyntax.self) }
+            .compactMap { $0.attributeName.as(IdentifierTypeSyntax.self) }
+            .contains { $0.name.text == "Action" }
     }
 }
