@@ -1,3 +1,4 @@
+@_exported import SwiftUI
 
 @attached(extension,
           conformances: Feature, View,
