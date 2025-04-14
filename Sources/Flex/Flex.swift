@@ -6,7 +6,7 @@
 @attached(member)
 public macro Feature() = #externalMacro(module: "FlexMacros", type: "FeatureMacro")
 
-@attached(member, names: named(outlets), named(actions))
+@attached(member, names: named(outlets), named(perform))
 public macro Presentation<F: Feature>() = #externalMacro(module: "FlexMacros", type: "PresentationMacro")
 
 @attached(peer)
