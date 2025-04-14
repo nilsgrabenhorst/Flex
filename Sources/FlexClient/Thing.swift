@@ -37,13 +37,13 @@ struct CounterView: View {
         VStack {
             HStack {
                 Button("-") {
-                    actions.decrement()
+                    perform.decrement()
                 }
                 Spacer()
                 Text("\(outlets.count)")
                 Spacer()
                 Button("+") {
-                    actions.increment()
+                    perform.increment()
                 }
             }
             
@@ -52,20 +52,20 @@ struct CounterView: View {
             
             HStack {
                 Button("reset") {
-                    actions.reset()
+                    perform.reset()
                 }
                 .disabled(!outlets.isResettable)
                 
                 Spacer()
                 
                 Button("42") {
-                    actions.set(42)
+                    perform.set(42)
                 }
                 .disabled(!outlets.canSetTo42)
             }
             
             Button("Change name") {
-                actions.changeName()
+                perform.changeName()
             }
         }
         .frame(maxWidth: 100)
