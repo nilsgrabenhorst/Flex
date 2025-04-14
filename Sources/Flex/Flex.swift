@@ -3,7 +3,6 @@
           conformances: Feature, View,
           names: named(body))
 @attached(peer, names: suffixed(Outlets), suffixed(Actions))
-@attached(member)
 public macro Feature() = #externalMacro(module: "FlexMacros", type: "FeatureMacro")
 
 @attached(member, names: named(outlets), named(perform))

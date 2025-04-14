@@ -37,44 +37,7 @@ struct FeatureMacroDiagnostic: DiagnosticMessage {
     private static let domain = "com.dohle.flex.macros.feature"
 }
 
-public struct FeatureMacro: MemberMacro, PeerMacro, ExtensionMacro {
-    
-    // MARK: Extensions
-    public static func expansion(
-        of node: SwiftSyntax.AttributeSyntax,
-        attachedTo declaration: some SwiftSyntax.DeclGroupSyntax,
-        providingExtensionsOf type: some SwiftSyntax.TypeSyntaxProtocol,
-        conformingTo protocols: [SwiftSyntax.TypeSyntax],
-        in context: some SwiftSyntaxMacros.MacroExpansionContext
-    ) throws -> [SwiftSyntax.ExtensionDeclSyntax] {
-        guard let structDecl = declaration.as(StructDeclSyntax.self) else {
-            // TODO: Error handling
-            return []
-        }
-        let name = structDecl.name
-        
-        let outletVariableDecls = structDecl.variableDecls.filter(\.isOutlet)
-        guard !outletVariableDecls.isEmpty else {
-            return []
-        }
-        
-        let outletBindings = outletVariableDecls.flatMap {
-            $0.bindings
-        }
-        
-        return try [
-            ExtensionDeclSyntax("extension \(structDecl.name): Flex.Feature") { "" },
-            ExtensionDeclSyntax("extension \(structDecl.name): SwiftUI.View") {
-                """
-                public var body: some View {
-                    presentation
-                        .environment(\(raw: name.text)Outlets(self))
-                        .environment(\(raw: name.text)Actions(self))
-                }
-                """
-            },
-        ]
-    }
+public struct FeatureMacro: PeerMacro, ExtensionMacro {
     
     // MARK: Peers
     
@@ -170,31 +133,40 @@ public struct FeatureMacro: MemberMacro, PeerMacro, ExtensionMacro {
         ]
     }
     
-    // MARK: Members
-    public static func expansion(of node: AttributeSyntax,
-                                 providingMembersOf declaration: some DeclGroupSyntax,
-                                 in context: some MacroExpansionContext) throws -> [DeclSyntax] {
-        guard let structDecl = declaration as? StructDeclSyntax else {
-            context.diagnose(
-                Diagnostic(
-                    node: declaration,
-                    message: FeatureMacroDiagnostic.notAStruct
-                )
-            )
+    // MARK: Extensions
+    public static func expansion(
+        of node: SwiftSyntax.AttributeSyntax,
+        attachedTo declaration: some SwiftSyntax.DeclGroupSyntax,
+        providingExtensionsOf type: some SwiftSyntax.TypeSyntaxProtocol,
+        conformingTo protocols: [SwiftSyntax.TypeSyntax],
+        in context: some SwiftSyntaxMacros.MacroExpansionContext
+    ) throws -> [SwiftSyntax.ExtensionDeclSyntax] {
+        guard let structDecl = declaration.as(StructDeclSyntax.self) else {
+            // TODO: Error handling
+            return []
+        }
+        let name = structDecl.name
+        
+        let outletVariableDecls = structDecl.variableDecls.filter(\.isOutlet)
+        guard !outletVariableDecls.isEmpty else {
             return []
         }
         
-        let outletVariableDecls = structDecl.variableDecls.filter(\.isOutlet)
-        
-        /*
-        if !outletVariableDecls.isEmpty {
-            // TODO: Create real outlets property
-            return ["var outlets: Int { 42 }"]
+        let outletBindings = outletVariableDecls.flatMap {
+            $0.bindings
         }
-         */
         
-        return [
-            
+        return try [
+            ExtensionDeclSyntax("extension \(structDecl.name): Flex.Feature") { "" },
+            ExtensionDeclSyntax("extension \(structDecl.name): SwiftUI.View") {
+                """
+                public var body: some View {
+                    presentation
+                        .environment(\(raw: name.text)Outlets(self))
+                        .environment(\(raw: name.text)Actions(self))
+                }
+                """
+            },
         ]
     }
 }
