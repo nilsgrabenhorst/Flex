@@ -56,9 +56,13 @@ public struct FeatureMacro: PeerMacro, ExtensionMacro {
         let name = structDecl.name
         
         let outletVariableDecls = structDecl.variableDecls.filter(\.isOutlet)
-        let outletBindings = outletVariableDecls.flatMap {
-            $0.bindings
-        }
+        
+        let writableOutlets = outletVariableDecls
+            .filter(\.isWritable)
+            .flatMap(\.bindings)
+        let readonlyOutlets = outletVariableDecls
+            .filter { !$0.isWritable }
+            .flatMap(\.bindings)
         
         let actionMethodDecls  = structDecl.methodDecls.filter(\.isAction)
         
@@ -79,27 +83,8 @@ public struct FeatureMacro: PeerMacro, ExtensionMacro {
             }
         }
         
-        let outletIdentifiersAndTypes: [(IdentifierPatternSyntax, TypeAnnotationSyntax)] = outletBindings.compactMap { binding -> (IdentifierPatternSyntax, TypeAnnotationSyntax)? in
-            guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self) else {
-                context.diagnose(
-                    Diagnostic(
-                        node: binding.pattern,
-                        message: FeatureMacroDiagnostic.notAnIdentifier
-                    )
-                )
-                return nil
-            }
-            guard let type = binding.typeAnnotation else {
-                context.diagnose(
-                    Diagnostic(
-                        node: identifier,
-                        message: FeatureMacroDiagnostic.typeAnnotationMissing
-                    )
-                )
-                return nil
-            }
-            return (identifier, type)
-        }
+        let readonlyOutletIdentifiersAndTypes = readonlyOutlets.identifiersAndTypes(context: context)
+        let readWriteOutletIdentifiersAndTypes = writableOutlets.identifiersAndTypes(context: context)
         
         return [
             // TODO: only if we have outlets
@@ -111,10 +96,28 @@ public struct FeatureMacro: PeerMacro, ExtensionMacro {
                         self.feature = feature
                     }
                     """
-                    for (identifier, type) in outletIdentifiersAndTypes {
+                    for (identifier, type) in readonlyOutletIdentifiersAndTypes {
                         try VariableDeclSyntax("var \(identifier)\(type)") {
                             "feature.\(identifier)"
                         }
+                    }
+                    for (identifier, type) in readWriteOutletIdentifiersAndTypes {
+                        """
+                        var \(identifier) \(type) {
+                            get { feature.\(identifier) }
+                            set { feature.\(identifier) = newValue }
+                        }
+                        
+                        @ObservationIgnored
+                        lazy var $\(identifier) = Binding(
+                            get: { @MainActor [unowned self] in
+                                self.feature.\(identifier)
+                            },
+                            set: { @MainActor [unowned self] newValue in
+                                self.feature.\(identifier) = newValue
+                            }
+                        )
+                        """
                     }
                 }
             ),
@@ -133,6 +136,19 @@ public struct FeatureMacro: PeerMacro, ExtensionMacro {
         ]
     }
     
+    static func bindingInitializers(for identifiersAndTypes: [(IdentifierPatternSyntax, TypeAnnotationSyntax)]) -> String? {
+        identifiersAndTypes
+            .map { identifier, type in
+                """
+                self.$\(identifier) = Binding(
+                    get: { self.feature.\(identifier) },
+                    set: { newValue in self.feature.\(identifier) = newValue }
+                )
+                """
+            }
+            .joined(separator: "\n")
+    }
+    
     // MARK: Extensions
     public static func expansion(
         of node: SwiftSyntax.AttributeSyntax,
@@ -146,15 +162,6 @@ public struct FeatureMacro: PeerMacro, ExtensionMacro {
             return []
         }
         let name = structDecl.name
-        
-        let outletVariableDecls = structDecl.variableDecls.filter(\.isOutlet)
-        guard !outletVariableDecls.isEmpty else {
-            return []
-        }
-        
-        let outletBindings = outletVariableDecls.flatMap {
-            $0.bindings
-        }
         
         return try [
             ExtensionDeclSyntax("extension \(structDecl.name): Flex.Feature") { "" },
@@ -189,6 +196,68 @@ extension VariableDeclSyntax {
             .compactMap { $0.as(AttributeSyntax.self) }
             .compactMap { $0.attributeName.as(IdentifierTypeSyntax.self) }
             .contains { $0.name.text == "Outlet" }
+    }
+    
+    var isWritable: Bool {
+        guard bindingSpecifier.text == "var" else { return false }
+        guard !modifiers.contains(where: { $0.isPrivateSet() }) else {
+            return false
+        }
+        let bindings = bindings
+        guard bindings.contains(where: { $0.hasSetter }) else { return false }
+        return true
+    }
+}
+
+extension PatternBindingSyntax {
+    var hasSetter: Bool {
+        guard let accessorBlock else { return false }
+        guard let accessors = accessorBlock.accessors.as(AccessorDeclListSyntax.self) else { return false }
+        return accessors.contains {
+            $0.accessorSpecifier.text == "set"
+        }
+    }
+    
+    func identifier(context: some SwiftSyntaxMacros.MacroExpansionContext) -> IdentifierPatternSyntax? {
+        guard let identifier = pattern.as(IdentifierPatternSyntax.self) else {
+            context.diagnose(
+                Diagnostic(
+                    node: pattern,
+                    message: FeatureMacroDiagnostic.notAnIdentifier
+                )
+            )
+            return nil
+        }
+        return identifier
+    }
+    
+    func type(context: some SwiftSyntaxMacros.MacroExpansionContext) -> TypeAnnotationSyntax? {
+        guard let typeAnnotation else {
+            context.diagnose(
+                Diagnostic(
+                    node: self,
+                    message: FeatureMacroDiagnostic.typeAnnotationMissing
+                )
+            )
+            return nil
+        }
+        return typeAnnotation
+    }
+}
+
+extension Sequence<PatternBindingSyntax> {
+    func identifiersAndTypes(context: some SwiftSyntaxMacros.MacroExpansionContext) -> [(IdentifierPatternSyntax, TypeAnnotationSyntax)] {
+        compactMap {
+            guard let identifier = $0.identifier(context: context) else { return nil }
+            guard let type = $0.type(context: context) else { return nil }
+            return (identifier, type)
+        }
+    }
+}
+
+extension DeclModifierSyntax {
+    func isPrivateSet() -> Bool {
+        name.text == "private" && detail?.detail.text == "set"
     }
 }
 

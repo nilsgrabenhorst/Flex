@@ -6,12 +6,20 @@ struct CounterFeature {
     let presentation = CounterView()
     
     @State private var counter = 0
-    @State private var name = "Trudbert"
+    @State private var _name = "Trudbert"
     
-    @Outlet var count: Int { counter }
+    @Outlet private(set) var count: Int {
+        get { counter }
+        set { counter = newValue }
+    }
     @Outlet var isResettable: Bool { counter != 0 }
     @Outlet var greeting: String = "Hello"
     @Outlet var canSetTo42: Bool { counter != 42 }
+    
+    @Outlet var name: String {
+        get { _name }
+        nonmutating set { _name = newValue }
+    }
     
     @Action
     func increment() { counter += 1 }
@@ -27,7 +35,7 @@ struct CounterFeature {
     
     @Action
     func changeName() {
-        name = (name == "Trudbert") ? "Möpelkötter" : "Trudbert"
+        _name = (name == "Trudbert") ? "Möpelkötter" : "Trudbert"
     }
 }
 
@@ -35,6 +43,11 @@ struct CounterFeature {
 struct CounterView: View {
     var body: some View {
         VStack {
+            Text(outlets.name)
+            
+            Divider()
+                .padding(.vertical)
+            
             HStack {
                 Button("-") {
                     perform.decrement()
@@ -45,10 +58,8 @@ struct CounterView: View {
                 Button("+") {
                     perform.increment()
                 }
-            }
+            }.padding(.bottom)
             
-            Divider()
-                .padding(.vertical)
             
             HStack {
                 Button("reset") {
@@ -64,9 +75,15 @@ struct CounterView: View {
                 .disabled(!outlets.canSetTo42)
             }
             
+            Divider()
+                .padding(.vertical)
+            
+            TextField("Name", text: outlets.$name)
+            
             Button("Change name") {
                 perform.changeName()
             }
+            
         }
         .frame(maxWidth: 100)
     }

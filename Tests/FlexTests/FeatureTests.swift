@@ -15,7 +15,19 @@ final class FeatureTests: XCTestCase {
     """
     @Feature
     struct SomeFeature {
-        @Outlet let name: String = "Trudbert"
+        private var counter = 0
+        @Outlet var mutableName: String = "Sören"
+        @Outlet private(set) var name: String = "Trudbert" {
+            didSet { print(name) }
+        }
+        @Outlet private(set) var privateSetter: Int {
+            get { counter }
+            set { counter = newValue }
+        }
+        @Outlet var count: Int {
+            get { counter }
+            set { counter = newValue }
+        }
     }
     """
     
