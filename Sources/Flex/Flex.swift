@@ -19,6 +19,7 @@ public macro Action() = #externalMacro(module: "FlexMacros", type: "ActionMacro"
 
 import SwiftUI
 
+@MainActor
 public protocol Feature: View {
     associatedtype Presentation: View
     var presentation: Presentation { get }
