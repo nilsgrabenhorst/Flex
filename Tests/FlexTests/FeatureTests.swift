@@ -87,4 +87,5 @@ let testMacros: [String: Macro.Type] = [
     "Feature": FeatureMacro.self,
     "Presentation": PresentationMacro.self,
     "Action": ActionMacro.self,
+    "Destination": DestinationMacro.self
 ]

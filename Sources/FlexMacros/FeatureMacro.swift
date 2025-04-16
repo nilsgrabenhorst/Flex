@@ -86,6 +86,11 @@ public struct FeatureMacro: PeerMacro, ExtensionMacro {
         let readonlyOutletIdentifiersAndTypes = readonlyOutlets.identifiersAndTypes(context: context)
         let readWriteOutletIdentifiersAndTypes = writableOutlets.identifiersAndTypes(context: context)
         
+        let destinationIdentifiersAndTypes = structDecl.variableDecls
+            .filter(\.isDestination)
+            .flatMap(\.bindings)
+            .identifiersAndTypes(context: context)
+        
         return [
             // TODO: only if we have outlets
             DeclSyntax(
@@ -132,6 +137,22 @@ public struct FeatureMacro: PeerMacro, ExtensionMacro {
                     """
                     actions
                 }
+            ),
+            // TODO: Only if we have destinations
+            DeclSyntax(
+                try ClassDeclSyntax("@MainActor @Observable public class \(raw: name.text + "Destinations")") {
+                    "private let feature: \(raw: name)"
+                    """
+                    init(_ feature: \(name)) {
+                        self.feature = feature
+                    }
+                    """
+                    for (identifier, type) in destinationIdentifiersAndTypes {
+                        try VariableDeclSyntax("var \(identifier)\(type)") {
+                            "feature.\(identifier)"
+                        }
+                    }
+                }
             )
         ]
     }
@@ -171,6 +192,7 @@ public struct FeatureMacro: PeerMacro, ExtensionMacro {
                     presentation
                         .environment(\(raw: name.text)Outlets(self))
                         .environment(\(raw: name.text)Actions(self))
+                        .environment(\(raw: name.text)Destinations(self))
                 }
                 """
             },
@@ -196,6 +218,13 @@ extension VariableDeclSyntax {
             .compactMap { $0.as(AttributeSyntax.self) }
             .compactMap { $0.attributeName.as(IdentifierTypeSyntax.self) }
             .contains { $0.name.text == "Outlet" }
+    }
+    
+    var isDestination: Bool {
+        attributes
+            .compactMap { $0.as(AttributeSyntax.self) }
+            .compactMap { $0.attributeName.as(IdentifierTypeSyntax.self) }
+            .contains { $0.name.text == "Destination" }
     }
     
     var isWritable: Bool {

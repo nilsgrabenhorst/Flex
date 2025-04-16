@@ -3,10 +3,10 @@
 @attached(extension,
           conformances: Feature, View,
           names: named(body))
-@attached(peer, names: suffixed(Outlets), suffixed(Actions))
+@attached(peer, names: suffixed(Outlets), suffixed(Actions), suffixed(Destinations))
 public macro Feature() = #externalMacro(module: "FlexMacros", type: "FeatureMacro")
 
-@attached(member, names: named(outlets), named(perform))
+@attached(member, names: named(outlets), named(perform), named(destinations))
 public macro Presentation<F: Feature>() = #externalMacro(module: "FlexMacros", type: "PresentationMacro")
 
 @attached(peer)
@@ -14,6 +14,9 @@ public macro Outlet() = #externalMacro(module: "FlexMacros", type: "OutletMacro"
 
 @attached(peer)
 public macro Action() = #externalMacro(module: "FlexMacros", type: "ActionMacro")
+
+@attached(peer)
+public macro Destination() = #externalMacro(module: "FlexMacros", type: "DestinationMacro")
 
 
 
@@ -24,4 +27,3 @@ public protocol Feature: View {
     associatedtype Presentation: View
     var presentation: Presentation { get }
 }
-
