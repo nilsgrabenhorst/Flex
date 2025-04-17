@@ -15,8 +15,8 @@ public macro Outlet() = #externalMacro(module: "FlexMacros", type: "OutletMacro"
 @attached(peer)
 public macro Action() = #externalMacro(module: "FlexMacros", type: "ActionMacro")
 
-@attached(peer)
-public macro Destination() = #externalMacro(module: "FlexMacros", type: "DestinationMacro")
+//@attached(peer)
+//public macro Destination() = #externalMacro(module: "FlexMacros", type: "DestinationMacro")
 
 
 
@@ -26,4 +26,40 @@ import SwiftUI
 public protocol Feature: View {
     associatedtype Presentation: View
     var presentation: Presentation { get }
+}
+
+public extension View {
+    @MainActor
+    func sheet<Content: View>(
+        destination content: Binding<Content?>,
+        onDismiss: (() -> Void)? = nil
+    ) -> some View {
+        self.sheet(isPresented: Binding(get: {
+            content.wrappedValue != nil
+        }, set: { isPresented in
+            if !isPresented {
+                content.wrappedValue = nil
+            }
+        }), onDismiss: onDismiss, content: {
+            content.wrappedValue
+        })
+    }
+}
+
+@propertyWrapper @MainActor
+public struct Destination<V: View>: DynamicProperty {
+    public typealias DestinationBinding = Binding<V?>
+    @State private var value: V?
+    public var wrappedValue: V? {
+        get { value }
+        nonmutating set { value = newValue }
+    }
+    
+    public init(wrappedValue: V? = nil) {
+        self.wrappedValue = wrappedValue
+    }
+    
+    public var projectedValue: DestinationBinding {
+        $value
+    }
 }

@@ -148,10 +148,34 @@ public struct FeatureMacro: PeerMacro, ExtensionMacro {
                     }
                     """
                     for (identifier, type) in destinationIdentifiersAndTypes {
-                        try VariableDeclSyntax("var \(identifier)\(type)") {
-                            "feature.\(identifier)"
+                        """
+                        var \(identifier)\(type) {
+                            feature.\(identifier)
                         }
+                        var $\(identifier): Binding<\(type.type)> {
+                            feature.$\(identifier)
+                        }
+                        """
                     }
+                    
+//                    for (identifier, type) in readWriteDestinationIdentifiersAndTypes {
+//                        """
+//                        var \(identifier) \(type) {
+//                            get { feature.\(identifier) }
+//                            set { feature.\(identifier) = newValue }
+//                        }
+//                        
+//                        @ObservationIgnored
+//                        lazy var $\(identifier) = Binding(
+//                            get: { @MainActor [unowned self] in
+//                                self.feature.\(identifier)
+//                            },
+//                            set: { @MainActor [unowned self] newValue in
+//                                self.feature.\(identifier) = newValue
+//                            }
+//                        )
+//                        """
+//                    }
                 }
             )
         ]
@@ -214,17 +238,11 @@ extension StructDeclSyntax {
 
 extension VariableDeclSyntax {
     var isOutlet: Bool {
-        attributes
-            .compactMap { $0.as(AttributeSyntax.self) }
-            .compactMap { $0.attributeName.as(IdentifierTypeSyntax.self) }
-            .contains { $0.name.text == "Outlet" }
+        hasAttribute("Outlet")
     }
     
     var isDestination: Bool {
-        attributes
-            .compactMap { $0.as(AttributeSyntax.self) }
-            .compactMap { $0.attributeName.as(IdentifierTypeSyntax.self) }
-            .contains { $0.name.text == "Destination" }
+        hasAttribute("Destination")
     }
     
     var isWritable: Bool {
@@ -235,6 +253,17 @@ extension VariableDeclSyntax {
         let bindings = bindings
         guard bindings.contains(where: { $0.hasSetter }) else { return false }
         return true
+    }
+    
+    var isStatePropertyWrapper: Bool {
+        hasAttribute("State")
+    }
+    
+    private func hasAttribute(_ attributeName: String) -> Bool {
+        attributes
+            .compactMap { $0.as(AttributeSyntax.self) }
+            .compactMap { $0.attributeName.as(IdentifierTypeSyntax.self) }
+            .contains { $0.name.text == attributeName }
     }
 }
 

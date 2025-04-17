@@ -28,9 +28,12 @@ final class FeatureTests: XCTestCase {
             get { counter }
             set { counter = newValue }
         }
+        
+        @Destination var destinationView: Text? = Text("Destination")
     }
     """
     
+    @MainActor
     func testExpansionShouldBeCorrect() async throws {
         
         assertMacroExpansion(
@@ -87,5 +90,5 @@ let testMacros: [String: Macro.Type] = [
     "Feature": FeatureMacro.self,
     "Presentation": PresentationMacro.self,
     "Action": ActionMacro.self,
-    "Destination": DestinationMacro.self
+//    "Destination": DestinationMacro.self,
 ]

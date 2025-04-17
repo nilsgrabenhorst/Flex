@@ -15,6 +15,6 @@ struct FlexPlugin: CompilerPlugin {
         OutletMacro.self,
         PresentationMacro.self,
         ActionMacro.self,
-        DestinationMacro.self,
+//        DestinationMacro.self,
     ]
 }

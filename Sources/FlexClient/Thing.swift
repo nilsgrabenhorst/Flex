@@ -1,7 +1,7 @@
 import Flex
 import SwiftUI
 
-@Feature
+@Feature @MainActor
 struct CounterFeature {
     let presentation = CounterView()
     
@@ -37,6 +37,8 @@ struct CounterFeature {
     func changeName() {
         _name = (name == "Trudbert") ? "Möpelkötter" : "Trudbert"
     }
+    
+    @Destination var destinationView: Text? = Text("Destination")
 }
 
 @Presentation<CounterFeature>
