@@ -63,3 +63,21 @@ public struct Destination<V: View>: DynamicProperty {
         $value
     }
 }
+
+@propertyWrapper @MainActor
+public struct OutletState<T>: DynamicProperty {
+    public typealias OutletBinding = Binding<T>
+    @State private var value: T
+    public var wrappedValue: T {
+        get { value }
+        nonmutating set { value = newValue }
+    }
+    
+    public init(wrappedValue: T) {
+        self._value = State(initialValue: wrappedValue)
+    }
+    
+    public var projectedValue: OutletBinding {
+        $value
+    }
+}

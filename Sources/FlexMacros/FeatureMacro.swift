@@ -91,8 +91,13 @@ public struct FeatureMacro: PeerMacro, ExtensionMacro {
             .flatMap(\.bindings)
             .identifiersAndTypes(context: context)
         
+        let outletStateIdentifiersAndTypes = structDecl.variableDecls
+            .filter(\.isOutletState)
+            .flatMap(\.bindings)
+            .identifiersAndTypes(context: context)
+        
         return [
-            // TODO: only if we have outlets
+            // TODO: only if we have outlets or OutletStates
             DeclSyntax(
                 try ClassDeclSyntax("@MainActor @Observable public class \(raw: name.text + "Outlets")") {
                     "private let feature: \(raw: name)"
@@ -124,8 +129,19 @@ public struct FeatureMacro: PeerMacro, ExtensionMacro {
                         )
                         """
                     }
+                    for (identifier, type) in outletStateIdentifiersAndTypes {
+                        """
+                        var \(identifier)\(type) {
+                            feature.\(identifier)
+                        }
+                        var $\(identifier): Binding<\(type.type)> {
+                            feature.$\(identifier)
+                        }
+                        """
+                    }
                 }
             ),
+            
             // TODO: Only if we have actions
             DeclSyntax(
                 try ClassDeclSyntax("@MainActor @Observable public class \(raw: name.text + "Actions")") {
@@ -157,25 +173,6 @@ public struct FeatureMacro: PeerMacro, ExtensionMacro {
                         }
                         """
                     }
-                    
-//                    for (identifier, type) in readWriteDestinationIdentifiersAndTypes {
-//                        """
-//                        var \(identifier) \(type) {
-//                            get { feature.\(identifier) }
-//                            set { feature.\(identifier) = newValue }
-//                        }
-//                        
-//                        @ObservationIgnored
-//                        lazy var $\(identifier) = Binding(
-//                            get: { @MainActor [unowned self] in
-//                                self.feature.\(identifier)
-//                            },
-//                            set: { @MainActor [unowned self] newValue in
-//                                self.feature.\(identifier) = newValue
-//                            }
-//                        )
-//                        """
-//                    }
                 }
             )
         ]
@@ -243,6 +240,10 @@ extension VariableDeclSyntax {
     
     var isDestination: Bool {
         hasAttribute("Destination")
+    }
+    
+    var isOutletState: Bool {
+        hasAttribute("OutletState")
     }
     
     var isWritable: Bool {
