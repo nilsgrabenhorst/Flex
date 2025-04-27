@@ -1,5 +1,6 @@
 @_exported import SwiftUI
 
+@attached(memberAttribute)
 @attached(extension,
           conformances: Feature, View,
           names: named(body))
@@ -9,7 +10,11 @@ public macro Feature() = #externalMacro(module: "FlexMacros", type: "FeatureMacr
 @attached(member, names: named(outlets), named(perform), named(destinations))
 public macro Presentation<F: Feature>() = #externalMacro(module: "FlexMacros", type: "PresentationMacro")
 
-@attached(peer)
+@attached(accessor)
+@attached(peer, names:
+            suffixed(Storage)
+          , prefixed(`$`)
+)
 public macro Outlet() = #externalMacro(module: "FlexMacros", type: "OutletMacro")
 
 @attached(peer)
@@ -27,6 +32,28 @@ public protocol Feature: View {
     associatedtype Presentation: View
     var presentation: Presentation { get }
 }
+
+@MainActor public protocol WithOutlets {
+    associatedtype Outlets
+}
+@MainActor public protocol WithActions {
+    associatedtype Actions
+}
+@MainActor public protocol WithDestinations {
+    associatedtype Destinations
+}
+
+@MainActor
+public protocol Presentation: View {
+    associatedtype F: Feature
+    var feature: F { get }
+}
+
+extension Presentation where F: WithOutlets {
+    var outlets: F.Outlets {        
+    }
+}
+
 
 public extension View {
     @MainActor

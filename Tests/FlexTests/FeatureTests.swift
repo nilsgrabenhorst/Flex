@@ -9,45 +9,140 @@ import XCTest
 import SwiftSyntaxMacros
 import SwiftSyntaxMacrosTestSupport
 import FlexMacros
+import Flex
+
+//@Feature
+//struct MockFeature {
+//    @State var _counter: Int = 0
+//    
+//    @Outlet var mutableStored: Int = 0
+//    @Outlet private(set) var privateSetStored: Int = 0
+//    @Outlet let constantStored: Int = 0
+//    @Outlet var immutableComputed: Int { _counter }
+//    @Outlet var mutableComputed: Int {
+//        get { _counter }
+//        nonmutating set { _counter = newValue }
+//    }
+//    
+//    init<V: View>(presentation: V) {
+//        self.presentation = AnyView(presentation)
+//    }
+//    
+//    let presentation: AnyView
+//}
+//
+//@Presentation<MockFeature>
+//struct MockView: View {
+//    var body: some View {
+//        EmptyView()
+//    }
+//}
+//
+//struct FeatureTests {
+//    @Test func outletBindingForStoredVar() async throws {
+//        let presentation = MockView()
+//        let feature = MockFeature(presentation: presentation)
+//        
+//        #expect(presentation.outlets.$readWrite != nil)
+//    }
+//}
 
 final class FeatureTests: XCTestCase {
     let sample =
     """
     @Feature
     struct SomeFeature {
-        private var counter = 0
-        @Outlet var mutableName: String = "Sören"
-        @Outlet private(set) var name: String = "Trudbert" {
+        init(value: Int) {
+            self.storedConstantWithoutInitializer = value
+            self.storedMutableWithoutInitializer = value
+        }
+    
+        @State private var counter = 0
+        @Outlet var storedMutable: String = "Sören"
+        @Outlet let storedConstantWithoutInitializer: Int
+        @Outlet var storedMutableWithoutInitializer: Int
+        @Outlet private(set) var stored: String = "Trudbert" {
             didSet { print(name) }
         }
-        @Outlet private(set) var privateSetter: Int {
+        @Outlet let storedConstant: String = "Trudbert"
+        @Outlet private(set) var computedPrivateSet: Int {
             get { counter }
-            set { counter = newValue }
+            nonmutating set { counter = newValue }
         }
-        @Outlet var count: Int {
+        @Outlet var computedReadonly: Int { counter }
+        @Outlet var computed: Int {
             get { counter }
-            set { counter = newValue }
+            nonmutating set { counter = newValue }
         }
         
         @Destination var destinationView: Text? = Text("Destination")
     }
     """
     
+    let simpleSample =
+    """
+    @Feature
+    struct SomeFeature {
+        @State var counter: Int = 0
+        @Outlet var storedMutable: String = "Sören"
+        @Outlet var computedMutable: Int {
+            get { counter }
+            nonmutating set { counter = newValue }
+        }
+    }
+    
+    @Presentation<SomeFeature>
+    struct SomePresentation: View {
+        var body: some View {
+            Text("Hello")
+        }
+    }
+    """
+    
     @MainActor
-    func testExpansionShouldBeCorrect() async throws {
+    func testSimpleExpansionShouldBeCorrect() async throws {
         
         assertMacroExpansion(
-            sample,
+            simpleSample,
             expandedSource:
                     """
                     struct SomeFeature {
-                        let name: String = "Trudbert"
+                        var storedMutable: String {
+                            get {
+                                storedMutableStorage
+                            }
+                            nonmutating set {
+                                storedMutableStorage = newValue
+                            }
+                        }
+
+                        @State private var storedMutableStorage: String = "Sören"
+
+                        var $storedMutable: Binding<String > {
+                            $storedMutableStorage
+                        }
                     }
                     """
             ,
             macros: testMacros
         )
     }
+    
+//    @MainActor
+//    func testExpansionShouldBeCorrect() async throws {
+//        
+//        assertMacroExpansion(
+//            sample,
+//            expandedSource:
+//                    """
+//                    struct SomeFeature {
+//                        let name: String = "Trudbert"
+//                    }
+//                    """
+//            ,
+//            macros: testMacros
+//        )
+//    }
     
 }
 

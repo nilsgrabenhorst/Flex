@@ -27,9 +27,9 @@ public struct PresentationMacro: MemberMacro {
         
         return [
             """
-            @Environment(\(raw: featureType.name.text)Outlets.self) private var outlets
-            @Environment(\(raw: featureType.name.text)Actions.self) private var perform
-            @Environment(\(raw: featureType.name.text)Destinations.self) private var destinations
+            @Environment(\(raw: featureType.name.text)Outlets.self) var outlets
+            @Environment(\(raw: featureType.name.text)Actions.self) var perform
+            @Environment(\(raw: featureType.name.text)Destinations.self) var destinations
             """
         ]
     }

@@ -37,10 +37,10 @@ struct FeatureMacroDiagnostic: DiagnosticMessage {
     private static let domain = "com.dohle.flex.macros.feature"
 }
 
-public struct FeatureMacro: PeerMacro, ExtensionMacro {
-    
-    // MARK: Peers
-    
+public struct FeatureMacro {}
+
+// MARK: - Peers
+extension FeatureMacro: PeerMacro {
     public static func expansion(of node: SwiftSyntax.AttributeSyntax,
                                  providingPeersOf declaration: some SwiftSyntax.DeclSyntaxProtocol,
                                  in context: some SwiftSyntaxMacros.MacroExpansionContext) throws -> [SwiftSyntax.DeclSyntax] {
@@ -51,19 +51,61 @@ public struct FeatureMacro: PeerMacro, ExtensionMacro {
                     message: FeatureMacroDiagnostic.notAStruct
                 )
             )
-            return ["protocol WrongOne {}"]
+            return []
         }
+        
+        return [
+            try outlets(for: structDecl, context: context),
+            try actions(for: structDecl, context: context),
+            try destinations(for: structDecl, context: context)
+        ].compactMap { $0 }
+    }
+    
+    private static func bindingInitializers(for identifiersAndTypes: [(IdentifierPatternSyntax, TypeAnnotationSyntax)]) -> String? {
+        identifiersAndTypes
+            .map { identifier, type in
+                """
+                self.$\(identifier) = Binding(
+                    get: { self.feature.\(identifier) },
+                    set: { newValue in self.feature.\(identifier) = newValue }
+                )
+                """
+            }
+            .joined(separator: "\n")
+    }
+    
+    private static func destinations(for structDecl: StructDeclSyntax, context: some SwiftSyntaxMacros.MacroExpansionContext) throws -> DeclSyntax? {
+        let destinationIdentifiersAndTypes = structDecl.variableDecls
+            .filter(\.isDestination)
+            .flatMap(\.bindings)
+            .identifiersAndTypes(context: context)
+        guard !destinationIdentifiersAndTypes.isEmpty else { return nil }
+        
         let name = structDecl.name
         
-        let outletVariableDecls = structDecl.variableDecls.filter(\.isOutlet)
-        
-        let writableOutlets = outletVariableDecls
-            .filter(\.isWritable)
-            .flatMap(\.bindings)
-        let readonlyOutlets = outletVariableDecls
-            .filter { !$0.isWritable }
-            .flatMap(\.bindings)
-        
+        return DeclSyntax(
+            try ClassDeclSyntax("@MainActor @Observable public class \(raw: name.text + "Destinations")") {
+                "private let feature: \(raw: name)"
+                """
+                init(_ feature: \(name)) {
+                    self.feature = feature
+                }
+                """
+                for (identifier, type) in destinationIdentifiersAndTypes {
+                    """
+                    var \(identifier)\(type) {
+                        feature.\(identifier)
+                    }
+                    var $\(identifier): Binding<\(type.type)> {
+                        feature.$\(identifier)
+                    }
+                    """
+                }
+            }
+        )
+    }
+    
+    private static func actions(for structDecl: StructDeclSyntax, context: some SwiftSyntaxMacros.MacroExpansionContext) throws -> DeclSyntax? {
         let actionMethodDecls  = structDecl.methodDecls.filter(\.isAction)
         
         let actions: [FunctionDeclSyntax] = try actionMethodDecls.map {
@@ -82,116 +124,87 @@ public struct FeatureMacro: PeerMacro, ExtensionMacro {
                 "feature.\(name)(\(raw: arguments))"
             }
         }
+        guard !actions.isEmpty else { return nil }
         
-        let readonlyOutletIdentifiersAndTypes = readonlyOutlets.identifiersAndTypes(context: context)
-        let readWriteOutletIdentifiersAndTypes = writableOutlets.identifiersAndTypes(context: context)
-        
-        let destinationIdentifiersAndTypes = structDecl.variableDecls
-            .filter(\.isDestination)
-            .flatMap(\.bindings)
-            .identifiersAndTypes(context: context)
-        
-        let outletStateIdentifiersAndTypes = structDecl.variableDecls
-            .filter(\.isOutletState)
-            .flatMap(\.bindings)
-            .identifiersAndTypes(context: context)
-        
-        return [
-            // TODO: only if we have outlets or OutletStates
-            DeclSyntax(
-                try ClassDeclSyntax("@MainActor @Observable public class \(raw: name.text + "Outlets")") {
-                    "private let feature: \(raw: name)"
-                    """
-                    init(_ feature: \(name)) {
-                        self.feature = feature
-                    }
-                    """
-                    for (identifier, type) in readonlyOutletIdentifiersAndTypes {
-                        try VariableDeclSyntax("var \(identifier)\(type)") {
-                            "feature.\(identifier)"
-                        }
-                    }
-                    for (identifier, type) in readWriteOutletIdentifiersAndTypes {
-                        """
-                        var \(identifier) \(type) {
-                            get { feature.\(identifier) }
-                            set { feature.\(identifier) = newValue }
-                        }
-                        
-                        @ObservationIgnored
-                        lazy var $\(identifier) = Binding(
-                            get: { @MainActor [unowned self] in
-                                self.feature.\(identifier)
-                            },
-                            set: { @MainActor [unowned self] newValue in
-                                self.feature.\(identifier) = newValue
-                            }
-                        )
-                        """
-                    }
-                    for (identifier, type) in outletStateIdentifiersAndTypes {
-                        """
-                        var \(identifier)\(type) {
-                            feature.\(identifier)
-                        }
-                        var $\(identifier): Binding<\(type.type)> {
-                            feature.$\(identifier)
-                        }
-                        """
-                    }
-                }
-            ),
-            
-            // TODO: Only if we have actions
-            DeclSyntax(
-                try ClassDeclSyntax("@MainActor @Observable public class \(raw: name.text + "Actions")") {
-                    "private let feature: \(raw: name)"
-                    """
-                    init(_ feature: \(name)) {
-                        self.feature = feature
-                    }
-                    """
-                    actions
-                }
-            ),
-            // TODO: Only if we have destinations
-            DeclSyntax(
-                try ClassDeclSyntax("@MainActor @Observable public class \(raw: name.text + "Destinations")") {
-                    "private let feature: \(raw: name)"
-                    """
-                    init(_ feature: \(name)) {
-                        self.feature = feature
-                    }
-                    """
-                    for (identifier, type) in destinationIdentifiersAndTypes {
-                        """
-                        var \(identifier)\(type) {
-                            feature.\(identifier)
-                        }
-                        var $\(identifier): Binding<\(type.type)> {
-                            feature.$\(identifier)
-                        }
-                        """
-                    }
-                }
-            )
-        ]
-    }
-    
-    static func bindingInitializers(for identifiersAndTypes: [(IdentifierPatternSyntax, TypeAnnotationSyntax)]) -> String? {
-        identifiersAndTypes
-            .map { identifier, type in
+        let name = structDecl.name
+        return DeclSyntax(
+            try ClassDeclSyntax.init("@MainActor @Observable public class \(raw: name.text + "Actions")") {
+                "private let feature: \(raw: name)"
                 """
-                self.$\(identifier) = Binding(
-                    get: { self.feature.\(identifier) },
-                    set: { newValue in self.feature.\(identifier) = newValue }
-                )
+                init(_ feature: \(name)) {
+                    self.feature = feature
+                }
                 """
+                actions
             }
-            .joined(separator: "\n")
+        )
     }
     
-    // MARK: Extensions
+    private static func outlets(for structDecl: StructDeclSyntax, context: some SwiftSyntaxMacros.MacroExpansionContext) throws -> DeclSyntax? {
+        let name = structDecl.name
+        let (states, outlets) = structDecl.variableDecls
+            .filter(\.isOutlet)
+            .split { $0.isOutletConvertibleToState && !$0.isSetterPrivate }
+        
+        let (writeable, readonly) = outlets.split { $0.isWritable && !$0.isSetterPrivate }
+        
+        let stateOutlets = states.flatMap(\.bindings).identifiersAndTypes(context: context)
+        let writableOutlets = writeable.flatMap(\.bindings).identifiersAndTypes(context: context)
+        let readonlyOutlets = readonly.flatMap(\.bindings).identifiersAndTypes(context: context)
+        
+        guard !stateOutlets.isEmpty || !writableOutlets.isEmpty || !readonlyOutlets.isEmpty else {
+            return nil
+        }
+        
+        return DeclSyntax(
+            try ClassDeclSyntax("@MainActor @Observable public class \(raw: name.text + "Outlets")") {
+                "private let feature: \(raw: name)"
+                """
+                init(_ feature: \(name)) {
+                    self.feature = feature
+                }
+                """
+                for (identifier, type) in stateOutlets {
+                    """
+                    var \(identifier)\(type) {
+                        feature.\(identifier)
+                    }
+                    var $\(identifier): Binding<\(type.type)> {
+                        feature.$\(identifier)
+                    } 
+                    """
+                }
+                for (identifier, type) in writableOutlets {
+                    """
+                    var \(identifier)\(type) {
+                        feature.\(identifier)
+                    }
+                    
+                    @ObservationIgnored
+                    lazy var $\(identifier) = Binding(
+                        get: { @MainActor [unowned self] in
+                            self.feature.\(identifier)
+                        },
+                        set: { @MainActor [unowned self] newValue in
+                            self.feature.\(identifier) = newValue
+                        }
+                    )
+                    """
+                }
+                for (identifier, type) in readonlyOutlets {
+                    """
+                    var \(identifier)\(type) {
+                        feature.\(identifier)
+                    } 
+                    """
+                }
+            }
+        )
+    }
+}
+    
+// MARK: - Extensions
+extension FeatureMacro: ExtensionMacro {
     public static func expansion(
         of node: SwiftSyntax.AttributeSyntax,
         attachedTo declaration: some SwiftSyntax.DeclGroupSyntax,
@@ -204,22 +217,49 @@ public struct FeatureMacro: PeerMacro, ExtensionMacro {
             return []
         }
         let name = structDecl.name
+        let variableDecls = structDecl.variableDecls
+        let hasOutlets = variableDecls.contains(where: \.isOutlet)
+        let hasDestinations = variableDecls.contains(where: \.isDestination)
+        let hasActions = structDecl.methodDecls.contains(where: \.isAction)
+        
+        let outletsEnvironment: String? = hasOutlets ? "\n        .environment(\(name.text)Outlets(self))" : nil
+        let actionsEnvironment: String? = hasActions ? "\n        .environment(\(name.text)Actions(self))" : nil
+        let destinationsEnvironment: String? = hasDestinations ? "\n        .environment(\(name.text)Destinations(self))" : nil
+        let environmentInjections = [outletsEnvironment, actionsEnvironment, destinationsEnvironment]
+            .compactMap(\.self)
+            .joined(separator: "")
         
         return try [
             ExtensionDeclSyntax("extension \(structDecl.name): Flex.Feature") { "" },
             ExtensionDeclSyntax("extension \(structDecl.name): SwiftUI.View") {
                 """
                 public var body: some View {
-                    presentation
-                        .environment(\(raw: name.text)Outlets(self))
-                        .environment(\(raw: name.text)Actions(self))
-                        .environment(\(raw: name.text)Destinations(self))
+                    presentation\(raw: environmentInjections)
                 }
                 """
             },
         ]
     }
 }
+
+// MARK: - Member Attributes
+extension FeatureMacro: MemberAttributeMacro {
+    public static func expansion(
+        of node: SwiftSyntax.AttributeSyntax,
+        attachedTo declaration: some SwiftSyntax.DeclGroupSyntax,
+        providingAttributesFor member: some SwiftSyntax.DeclSyntaxProtocol,
+        in context: some SwiftSyntaxMacros.MacroExpansionContext
+    ) throws -> [SwiftSyntax.AttributeSyntax] {
+        guard let variableDecl = member.as(VariableDeclSyntax.self),
+              variableDecl.isOutletConvertibleToState
+        else {
+            return []
+        }
+        return [AttributeSyntax(attributeName: IdentifierTypeSyntax(name: .identifier("State")))]
+    }
+}
+
+// MARK: -
 
 extension StructDeclSyntax {
     var variableDecls: [VariableDeclSyntax] {
@@ -246,14 +286,42 @@ extension VariableDeclSyntax {
         hasAttribute("OutletState")
     }
     
-    var isWritable: Bool {
-        guard bindingSpecifier.text == "var" else { return false }
-        guard !modifiers.contains(where: { $0.isPrivateSet() }) else {
+    func isStoredProperty() -> Bool {
+        guard bindings.count == 1 else {
+            // TODO: Diagnostic
             return false
         }
+        let binding: PatternBindingSyntax = bindings.first!
+        guard let accessorBlock = binding.accessorBlock else { return true }
+        guard let accessors = accessorBlock.accessors.as(AccessorDeclListSyntax.self) else {
+            return true
+        }
+        let accessorSpecifiers = Set(accessors.map(\.accessorSpecifier))
+        let propertyObserverSpecifiers: Set<TokenSyntax> = ["didSet", "willSet"]
+        
+        return accessorSpecifiers
+            .subtracting(propertyObserverSpecifiers)
+            .isEmpty
+    }
+    
+    var isWritable: Bool {
+        guard bindingSpecifier.text == "var" else { return false }
         let bindings = bindings
-        guard bindings.contains(where: { $0.hasSetter }) else { return false }
-        return true
+        if isStoredProperty() {
+            return true
+        } else {
+            return bindings.contains(where: { $0.hasSetter })
+        }
+    }
+    
+    var isSetterPrivate: Bool {
+        modifiers.contains { $0.isPrivateSet() }
+    }
+    
+    var isOutletConvertibleToState: Bool {
+        isOutlet &&
+        isStoredProperty() &&
+        isWritable
     }
     
     var isStatePropertyWrapper: Bool {
@@ -301,6 +369,21 @@ extension PatternBindingSyntax {
             return nil
         }
         return typeAnnotation
+    }
+}
+
+public extension Sequence {
+    func split<E: Error>(_ isIncluded: (Element) throws(E) -> Bool) throws(E) -> (satisfies: [Element], rest: [Element]) {
+        var satisfies: [Element] = []
+        var rest: [Element] = []
+        for element in self {
+            if try isIncluded(element) {
+                satisfies.append(element)
+            } else {
+                rest.append(element)
+            }
+        }
+        return (satisfies, rest)
     }
 }
 
