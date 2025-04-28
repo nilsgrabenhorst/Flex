@@ -89,6 +89,8 @@ final class FeatureTests: XCTestCase {
             get { counter }
             nonmutating set { counter = newValue }
         }
+        @Outlet var isResettable: Bool { counter != 0 }
+        @Action func increment() { counter += 1 }
     }
     
     @Presentation<SomeFeature>

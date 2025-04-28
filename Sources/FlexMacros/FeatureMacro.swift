@@ -222,23 +222,76 @@ extension FeatureMacro: ExtensionMacro {
         let hasDestinations = variableDecls.contains(where: \.isDestination)
         let hasActions = structDecl.methodDecls.contains(where: \.isAction)
         
-        let outletsEnvironment: String? = hasOutlets ? "\n        .environment(\(name.text)Outlets(self))" : nil
-        let actionsEnvironment: String? = hasActions ? "\n        .environment(\(name.text)Actions(self))" : nil
-        let destinationsEnvironment: String? = hasDestinations ? "\n        .environment(\(name.text)Destinations(self))" : nil
-        let environmentInjections = [outletsEnvironment, actionsEnvironment, destinationsEnvironment]
-            .compactMap(\.self)
-            .joined(separator: "")
+        let withOutletsExtension = hasOutlets ? try ExtensionDeclSyntax("extension \(name): Flex.WithOutlets") {
+            """
+            public var outlets: \(raw: name.text)Outlets {
+                _outlets
+            }
+            """
+        } : nil
+        let withActionsExtension = hasActions ? try ExtensionDeclSyntax("extension \(name): Flex.WithActions") {
+            """
+            public var actions: \(raw: name.text)Actions {
+                _actions
+            }
+            """
+        } : nil
+        let withDestinationsExtension = hasDestinations ? try ExtensionDeclSyntax("extension \(name): Flex.WithDestinations") {
+            """
+            public var destinations: \(raw: name.text)Destinations {
+                _destinations
+            }
+            """
+        } : nil
+        let markerExtensions = [withOutletsExtension, withActionsExtension, withDestinationsExtension].compactMap(\.self)
         
         return try [
-            ExtensionDeclSyntax("extension \(structDecl.name): Flex.Feature") { "" },
-            ExtensionDeclSyntax("extension \(structDecl.name): SwiftUI.View") {
+            ExtensionDeclSyntax("extension \(name): Flex.Feature") { "" },
+            ExtensionDeclSyntax("extension \(name): SwiftUI.View") {
                 """
                 public var body: some View {
-                    presentation\(raw: environmentInjections)
+                    presentation
+                        .environment(SomeFeature(self))
                 }
                 """
             },
-        ]
+        ] + markerExtensions
+    }
+}
+
+
+
+// MARK: - Members
+extension FeatureMacro: MemberMacro {
+    public static func expansion(
+        of node: AttributeSyntax,
+        providingMembersOf declaration: some DeclGroupSyntax,
+        in context: some MacroExpansionContext
+    ) throws -> [DeclSyntax] {
+        guard let structDecl = declaration.as(StructDeclSyntax.self) else {
+            // TODO: Error handling
+            return []
+        }
+        let name = structDecl.name.text
+        let variableDecls = structDecl.variableDecls
+        let hasOutlets = variableDecls.contains(where: \.isOutlet)
+        let hasActions = structDecl.methodDecls.contains(where: \.isAction)
+        let hasDestinations = variableDecls.contains(where: \.isDestination)
+        
+        /*
+         lazy var does not work on an immutable struct.
+         We need to create a bespoke Feature object for injecting into the environment...
+         */
+        
+        let outletsVar: DeclSyntax? = hasOutlets ? "private lazy var _outlets = \(raw: name)Outlets(self)" : nil
+        let actionsVar: DeclSyntax? = hasActions ? "private lazy var _actions = \(raw: name)Actions(self)" : nil
+        let destinationsVar: DeclSyntax? = hasDestinations ? "private lazy var _destinations = \(raw: name)Destinations(self)" : nil
+        
+        return [
+            outletsVar,
+            actionsVar,
+            destinationsVar,
+        ].compactMap(\.self)
     }
 }
 
@@ -250,12 +303,14 @@ extension FeatureMacro: MemberAttributeMacro {
         providingAttributesFor member: some SwiftSyntax.DeclSyntaxProtocol,
         in context: some SwiftSyntaxMacros.MacroExpansionContext
     ) throws -> [SwiftSyntax.AttributeSyntax] {
-        guard let variableDecl = member.as(VariableDeclSyntax.self),
-              variableDecl.isOutletConvertibleToState
+        guard let variableDecl = member.as(VariableDeclSyntax.self)
         else {
             return []
         }
-        return [AttributeSyntax(attributeName: IdentifierTypeSyntax(name: .identifier("State")))]
+        return variableDecl
+            .isOutletConvertibleToState
+                ? [AttributeSyntax(attributeName: IdentifierTypeSyntax(name: .identifier("State")))]
+                : []
     }
 }
 
@@ -294,7 +349,11 @@ extension VariableDeclSyntax {
         let binding: PatternBindingSyntax = bindings.first!
         guard let accessorBlock = binding.accessorBlock else { return true }
         guard let accessors = accessorBlock.accessors.as(AccessorDeclListSyntax.self) else {
-            return true
+            if let _ = accessorBlock.accessors.as(CodeBlockItemListSyntax.self) {
+                return false
+            } else {
+                return true
+            }
         }
         let accessorSpecifiers = Set(accessors.map(\.accessorSpecifier))
         let propertyObserverSpecifiers: Set<TokenSyntax> = ["didSet", "willSet"]

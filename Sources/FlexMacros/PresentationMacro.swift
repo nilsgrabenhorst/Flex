@@ -27,20 +27,28 @@ public struct PresentationMacro: MemberMacro {
         
         return [
             """
-            @Environment(\(raw: featureType.name.text)Outlets.self) var outlets
-            @Environment(\(raw: featureType.name.text)Actions.self) var perform
-            @Environment(\(raw: featureType.name.text)Destinations.self) var destinations
+            @Environment(Flex.SomeFeature<\(raw: featureType.name.text)>.self) var _feature
             """
         ]
     }
 }
 
-extension PresentationMacro: PeerMacro {
+extension PresentationMacro: ExtensionMacro {
     public static func expansion(
         of node: AttributeSyntax,
-        providingPeersOf declaration: some DeclSyntaxProtocol,
+        attachedTo declaration: some DeclGroupSyntax,
+        providingExtensionsOf type: some TypeSyntaxProtocol,
+        conformingTo protocols: [TypeSyntax],
         in context: some MacroExpansionContext
-    ) throws -> [DeclSyntax] {
-        return []
+    ) throws -> [ExtensionDeclSyntax] {
+        guard let structDecl = declaration.as(StructDeclSyntax.self) else {
+            // TODO: Error handling
+            return []
+        }
+        let name = structDecl.name
+        
+        return try [
+            ExtensionDeclSyntax("extension \(name): Flex.Presentation") { "" },
+        ]
     }
 }
