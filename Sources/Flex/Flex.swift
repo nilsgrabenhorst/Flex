@@ -1,11 +1,11 @@
 @_exported import SwiftUI
 
-@attached(member, names: named(_outlets), named(_actions), named(_destinations))
+@attached(member, names: named(Box))
 @attached(memberAttribute)
 @attached(extension,
           conformances: Feature, View, WithOutlets, WithActions, WithDestinations,
           names: named(body), named(outlets), named(actions), named(destinations))
-@attached(peer, names: suffixed(Outlets), suffixed(Actions), suffixed(Destinations))
+@attached(peer, names: suffixed(Outlets), suffixed(Actions), suffixed(Destinations), suffixed(Box))
 public macro Feature() = #externalMacro(module: "FlexMacros", type: "FeatureMacro")
 
 @attached(extension, conformances: Presentation)
@@ -32,7 +32,12 @@ import SwiftUI
 @MainActor
 public protocol Feature: View {
     associatedtype Presentation: View
+    associatedtype Box: Observable
     var presentation: Presentation { get }
+}
+
+@MainActor
+public protocol FeatureBox {
 }
 
 @Observable
@@ -80,27 +85,27 @@ extension SomeFeature where F: WithDestinations {
 
 @MainActor
 public protocol Presentation: View {
-    associatedtype F: Feature
-    var _feature: SomeFeature<F> { get }
+    associatedtype FeatureBox
+    var _feature: FeatureBox { get }
 }
 
 @MainActor
-extension Presentation where F: WithOutlets {
-    public var outlets: F.Outlets {
+extension Presentation where FeatureBox: WithOutlets {
+    public var outlets: FeatureBox.Outlets {
         _feature.outlets
     }
 }
 
 @MainActor
-extension Presentation where F: WithActions {
-    public var perform: F.Actions {
+extension Presentation where FeatureBox: WithActions {
+    public var perform: FeatureBox.Actions {
         _feature.actions
     }
 }
 
 @MainActor
-extension Presentation where F: WithDestinations {
-    public var destinations: F.Destinations {
+extension Presentation where FeatureBox: WithDestinations {
+    public var destinations: FeatureBox.Destinations {
         _feature.destinations
     }
 }

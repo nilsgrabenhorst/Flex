@@ -55,6 +55,7 @@ extension FeatureMacro: PeerMacro {
         }
         
         return [
+            try featureBox(for: structDecl, context: context),
             try outlets(for: structDecl, context: context),
             try actions(for: structDecl, context: context),
             try destinations(for: structDecl, context: context)
@@ -72,6 +73,53 @@ extension FeatureMacro: PeerMacro {
                 """
             }
             .joined(separator: "\n")
+    }
+    
+    private static func featureBox(
+        for structDecl: StructDeclSyntax,
+        context: some SwiftSyntaxMacros.MacroExpansionContext
+    ) throws -> DeclSyntax? {
+        let name = structDecl.name
+        
+        let hasOutlets = structDecl.hasOutlets
+        let hasActions = structDecl.hasActions
+        let hasDestinations = structDecl.hasDestinations
+        let hasConformances = hasOutlets || hasActions || hasDestinations
+        
+        let protocols = (hasConformances ? ": " : "") +
+        [
+            hasOutlets ? "WithOutlets" : nil,
+            hasActions ? "WithActions" : nil,
+            hasDestinations ? "WithDestinations" : nil
+        ]
+            .compactMap(\.self)
+            .joined(separator: ", ")
+        
+        let outletsDecl =      hasOutlets ?      "public let outlets: \(name.text)Outlets" : ""
+        let actionsDecl =      hasActions ?      "public let actions: \(name.text)Actions" : ""
+        let destinationsDecl = hasDestinations ? "public let destinations: \(name.text)Destinations" : ""
+        
+        let outletsInit =      hasOutlets ?      "self.outlets = \(name.text)Outlets(_feature)" : ""
+        let actionsInit =      hasActions ?      "self.actions = \(name.text)Actions(_feature)" : ""
+        let destinationsInit = hasDestinations ? "self.destinations = \(name.text)Destinations(_feature)" : ""
+        
+        return try DeclSyntax(
+            ClassDeclSyntax("@MainActor @Observable public class \(raw: name.text)Box\(raw: protocols)") {
+                """
+                private let _feature: \(raw: name)
+                \(raw: outletsDecl)
+                \(raw: actionsDecl)
+                \(raw: destinationsDecl)
+                
+                init(_ feature: \(name)) {
+                    self._feature = feature
+                    \(raw: outletsInit)
+                    \(raw: actionsInit)
+                    \(raw: destinationsInit)
+                }
+                """
+            }
+        )
     }
     
     private static func destinations(for structDecl: StructDeclSyntax, context: some SwiftSyntaxMacros.MacroExpansionContext) throws -> DeclSyntax? {
@@ -217,33 +265,6 @@ extension FeatureMacro: ExtensionMacro {
             return []
         }
         let name = structDecl.name
-        let variableDecls = structDecl.variableDecls
-        let hasOutlets = variableDecls.contains(where: \.isOutlet)
-        let hasDestinations = variableDecls.contains(where: \.isDestination)
-        let hasActions = structDecl.methodDecls.contains(where: \.isAction)
-        
-        let withOutletsExtension = hasOutlets ? try ExtensionDeclSyntax("extension \(name): Flex.WithOutlets") {
-            """
-            public var outlets: \(raw: name.text)Outlets {
-                _outlets
-            }
-            """
-        } : nil
-        let withActionsExtension = hasActions ? try ExtensionDeclSyntax("extension \(name): Flex.WithActions") {
-            """
-            public var actions: \(raw: name.text)Actions {
-                _actions
-            }
-            """
-        } : nil
-        let withDestinationsExtension = hasDestinations ? try ExtensionDeclSyntax("extension \(name): Flex.WithDestinations") {
-            """
-            public var destinations: \(raw: name.text)Destinations {
-                _destinations
-            }
-            """
-        } : nil
-        let markerExtensions = [withOutletsExtension, withActionsExtension, withDestinationsExtension].compactMap(\.self)
         
         return try [
             ExtensionDeclSyntax("extension \(name): Flex.Feature") { "" },
@@ -251,15 +272,13 @@ extension FeatureMacro: ExtensionMacro {
                 """
                 public var body: some View {
                     presentation
-                        .environment(SomeFeature(self))
+                        .environment(Box(self))
                 }
                 """
             },
-        ] + markerExtensions
+        ]
     }
 }
-
-
 
 // MARK: - Members
 extension FeatureMacro: MemberMacro {
@@ -273,25 +292,10 @@ extension FeatureMacro: MemberMacro {
             return []
         }
         let name = structDecl.name.text
-        let variableDecls = structDecl.variableDecls
-        let hasOutlets = variableDecls.contains(where: \.isOutlet)
-        let hasActions = structDecl.methodDecls.contains(where: \.isAction)
-        let hasDestinations = variableDecls.contains(where: \.isDestination)
-        
-        /*
-         lazy var does not work on an immutable struct.
-         We need to create a bespoke Feature object for injecting into the environment...
-         */
-        
-        let outletsVar: DeclSyntax? = hasOutlets ? "private lazy var _outlets = \(raw: name)Outlets(self)" : nil
-        let actionsVar: DeclSyntax? = hasActions ? "private lazy var _actions = \(raw: name)Actions(self)" : nil
-        let destinationsVar: DeclSyntax? = hasDestinations ? "private lazy var _destinations = \(raw: name)Destinations(self)" : nil
         
         return [
-            outletsVar,
-            actionsVar,
-            destinationsVar,
-        ].compactMap(\.self)
+            "typealias Box = \(raw: name)Box"
+        ]
     }
 }
 
@@ -325,6 +329,18 @@ extension StructDeclSyntax {
     var methodDecls: [FunctionDeclSyntax] {
         memberBlock.members
             .compactMap { $0.decl.as(FunctionDeclSyntax.self) }
+    }
+    
+    var hasOutlets: Bool {
+        variableDecls.contains(where: \.isOutlet)
+    }
+    
+    var hasActions: Bool {
+        methodDecls.contains(where: \.isAction)
+    }
+    
+    var hasDestinations: Bool {
+        variableDecls.contains(where: \.isDestination)
     }
 }
 
