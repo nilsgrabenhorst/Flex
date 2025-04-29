@@ -17,9 +17,10 @@ struct CounterFeature {
     @Outlet var greeting: String = "Hi"
     @Outlet var canSetTo42: Bool { counter != 42 }
     
-    @Outlet var name: String {
+    @Outlet
+    var name: String {
         get { theName }
-        nonmutating set { theName = newValue }
+        nonmutating set { _theName.wrappedValue = newValue }
     }
     
     @Action

@@ -12,11 +12,7 @@ public macro Feature() = #externalMacro(module: "FlexMacros", type: "FeatureMacr
 @attached(member, names: named(_feature), named(outlets), named(perform), named(destinations))
 public macro Presentation<F: Feature>() = #externalMacro(module: "FlexMacros", type: "PresentationMacro")
 
-@attached(accessor)
-@attached(peer, names:
-            suffixed(Storage)
-          , prefixed(`$`)
-)
+@attached(peer)
 public macro Outlet() = #externalMacro(module: "FlexMacros", type: "OutletMacro")
 
 @attached(peer)

@@ -17,63 +17,7 @@ public struct OutletMacro: PeerMacro {
         providingPeersOf declaration: some DeclSyntaxProtocol,
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
-//        guard let variableDecl = declaration.as(VariableDeclSyntax.self) else {
-//            // TODO: Diagnostic
-//            return []
-//        }
-//        guard variableDecl.isStoredProperty(), variableDecl.isWritable else {
-//            // TODO: Diagnostic
-//            return []
-//        }
-//        guard let identifier = variableDecl.identifier,
-//              let typeAnnotation = variableDecl.typeAnnotation
-//        else {
-//            // TODO: Diagnostic
-//            return []
-//        }
-//        let type: TypeSyntax = typeAnnotation.type
-//        guard let initializer = variableDecl.initializer else {
-//            // TODO: Diagnostic
-//            return []
-//        }
-        return [
-//            DeclSyntax(
-//                "@State private var \(identifier)Storage: \(type)= \(initializer)"
-//            ),
-//            DeclSyntax(
-//                """
-//                var $\(identifier): Binding<\(type)> {
-//                    $\(identifier)Storage
-//                }
-//                """
-//            )
-        ]
-    }
-}
-
-extension OutletMacro: AccessorMacro {
-    public static func expansion(
-        of node: SwiftSyntax.AttributeSyntax,
-        providingAccessorsOf declaration: some SwiftSyntax.DeclSyntaxProtocol,
-        in context: some SwiftSyntaxMacros.MacroExpansionContext
-    ) throws -> [SwiftSyntax.AccessorDeclSyntax] {
-//        guard let variableDecl = declaration.as(VariableDeclSyntax.self) else {
-//            // TODO: Diagnostic
-//            return []
-//        }
-//        guard variableDecl.isStoredProperty(), variableDecl.isWritable else {
-//            // TODO: Diagnostic
-//            return []
-//        }
-//        guard let identifier = variableDecl.identifier
-//        else {
-//            // TODO: Diagnostic
-//            return []
-//        }
-        return [
-//            "get { \(identifier)Storage }",
-//            "nonmutating set { \(identifier)Storage = newValue }"
-        ]
+        return []
     }
 }
 
