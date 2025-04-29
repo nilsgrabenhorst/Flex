@@ -146,6 +146,13 @@ public struct Destination<V: View>: DynamicProperty {
     }
 }
 
+public extension Binding {
+    init(mainActorGet: @MainActor @escaping () -> Value, mainActorSet: @MainActor @escaping (Value) -> Void) {
+        self.init(get: { @MainActor in mainActorGet() },
+                  set: { @MainActor newValue in mainActorSet(newValue)})
+    }
+}
+
 //@propertyWrapper @MainActor
 //public struct OutletState<T>: DynamicProperty {
 //    public typealias OutletBinding = Binding<T>

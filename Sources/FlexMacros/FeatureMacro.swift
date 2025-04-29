@@ -230,12 +230,8 @@ extension FeatureMacro: PeerMacro {
                     
                     @ObservationIgnored
                     lazy var $\(identifier) = Binding(
-                        get: { @MainActor [unowned self] in
-                            self.feature.\(identifier)
-                        },
-                        set: { @MainActor [unowned self] newValue in
-                            self.feature.\(identifier) = newValue
-                        }
+                        mainActorGet: { [unowned self] in self.feature.\(identifier) },
+                        mainActorSet: { [unowned self] newValue in self.feature.\(identifier) = newValue }
                     )
                     """
                 }
