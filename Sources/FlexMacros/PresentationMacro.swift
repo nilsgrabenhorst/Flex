@@ -27,7 +27,7 @@ public struct PresentationMacro: MemberMacro {
         
         return [
             """
-            @Environment(\(raw: featureType.name.text).Box.self) var _feature
+            @Environment(\(raw: featureType.name.text).Box.self) public var _feature
             """
         ]
     }

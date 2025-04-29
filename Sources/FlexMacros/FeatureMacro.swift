@@ -290,7 +290,7 @@ extension FeatureMacro: MemberMacro {
         let name = structDecl.name.text
         
         return [
-            "typealias Box = \(raw: name)Box"
+            "public typealias Box = \(raw: name)Box"
         ]
     }
 }
