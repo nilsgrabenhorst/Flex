@@ -1,4 +1,5 @@
 @_exported import SwiftUI
+import SwiftData
 
 @attached(member, names: named(Box))
 @attached(memberAttribute)
@@ -14,6 +15,14 @@ public macro Presentation<F: Feature>() = #externalMacro(module: "FlexMacros", t
 
 @attached(peer)
 public macro Outlet() = #externalMacro(module: "FlexMacros", type: "OutletMacro")
+
+@attached(peer, names: suffixed(Fetcher))
+@attached(accessor)
+public macro Fetched<Model: PersistentModel>(_ fetchDescriptor: FetchDescriptor<Model> = .init()) = #externalMacro(module: "FlexMacros", type: "FetchedMacro")
+
+@attached(peer, names: suffixed(Fetcher))
+@attached(accessor)
+public macro Fetched() = #externalMacro(module: "FlexMacros", type: "FetchedMacro")
 
 @attached(peer)
 public macro Action() = #externalMacro(module: "FlexMacros", type: "ActionMacro")
