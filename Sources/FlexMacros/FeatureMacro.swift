@@ -39,12 +39,13 @@ struct FeatureMacroDiagnostic: DiagnosticMessage {
 
 public struct FeatureMacro {}
 
+
 // MARK: - Peers
 extension FeatureMacro: PeerMacro {
     public static func expansion(of node: SwiftSyntax.AttributeSyntax,
                                  providingPeersOf declaration: some SwiftSyntax.DeclSyntaxProtocol,
                                  in context: some SwiftSyntaxMacros.MacroExpansionContext) throws -> [SwiftSyntax.DeclSyntax] {
-        guard let structDecl = declaration.as(StructDeclSyntax.self) else {
+        guard let classDecl = declaration.as(ClassDeclSyntax.self) else {
             context.diagnose(
                 Diagnostic(
                     node: declaration,
@@ -55,13 +56,17 @@ extension FeatureMacro: PeerMacro {
         }
         
         return [
-            try featureBox(for: structDecl, context: context),
-            try outlets(for: structDecl, context: context),
-            try actions(for: structDecl, context: context),
-            try destinations(for: structDecl, context: context)
-        ].compactMap { $0 }
+            /*
+            try featureBox(for: classDecl, context: context),
+            try outlets(for: classDecl, context: context),
+            try actions(for: classDecl, context: context),
+            try destinations(for: classDecl, context: context)
+             */
+        ]
+//            .compactMap { $0 }
     }
     
+    /*
     private static func bindingInitializers(for identifiersAndTypes: [(IdentifierPatternSyntax, TypeAnnotationSyntax)]) -> String? {
         identifiersAndTypes
             .map { identifier, type in
@@ -245,6 +250,7 @@ extension FeatureMacro: PeerMacro {
             }
         )
     }
+    */
 }
     
 // MARK: - Extensions
@@ -264,6 +270,7 @@ extension FeatureMacro: ExtensionMacro {
         
         return try [
             ExtensionDeclSyntax("extension \(name): Flex.Feature") { "" },
+            /*
             ExtensionDeclSyntax("extension \(name): SwiftUI.View") {
                 """
                 public var body: some View {
@@ -272,6 +279,7 @@ extension FeatureMacro: ExtensionMacro {
                 }
                 """
             },
+             */
         ]
     }
 }

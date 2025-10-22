@@ -4,8 +4,8 @@ import SwiftData
 @attached(member, names: named(Box))
 @attached(memberAttribute)
 @attached(extension,
-          conformances: Feature, View, WithOutlets, WithActions, WithDestinations,
-          names: named(body), named(outlets), named(actions), named(destinations))
+          conformances: Feature, WithOutlets, WithActions, WithDestinations,
+          names: named(view), named(outlets), named(actions), named(destinations))
 @attached(peer, names: suffixed(Outlets), suffixed(Actions), suffixed(Destinations), suffixed(Box))
 public macro Feature() = #externalMacro(module: "FlexMacros", type: "FeatureMacro")
 
@@ -33,13 +33,6 @@ public macro Action() = #externalMacro(module: "FlexMacros", type: "ActionMacro"
 
 
 import SwiftUI
-
-@MainActor
-public protocol Feature: View {
-    associatedtype Presentation: View
-    associatedtype Box: Observable
-    var presentation: Presentation { get }
-}
 
 @MainActor
 public protocol FeatureBox {
