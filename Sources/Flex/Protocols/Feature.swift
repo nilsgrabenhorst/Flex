@@ -8,6 +8,16 @@
 import SwiftUI
 
 @MainActor
+public protocol Feature: View {
+    associatedtype Presentation: View
+    associatedtype Feature: AnyObject
+    
+    var feature: Feature { get }
+    var presentation: Presentation { get }
+}
+
+/*
+@MainActor
 public protocol Feature: AnyObject {
     associatedtype Presentation: PresentationView where Presentation.F == Self
     associatedtype V: FeatureView where V.F == Self
@@ -40,3 +50,4 @@ extension Feature {
         V(feature: self)
     }
 }
+*/

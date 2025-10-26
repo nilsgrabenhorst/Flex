@@ -30,7 +30,15 @@ public macro Action() = #externalMacro(module: "FlexMacros", type: "ActionMacro"
 //@attached(peer)
 //public macro Destination() = #externalMacro(module: "FlexMacros", type: "DestinationMacro")
 
+@attached(peer)
+@attached(memberAttribute)
+public macro FeatureView() = #externalMacro(module: "FlexMacros", type: "FeatureViewMacro")
 
+@attached(peer)
+public macro OnChange<ViewModel, T>(update keyPath: WritableKeyPath<ViewModel, T>) = #externalMacro(module: "FlexMacros", type: "OnChangeMacro")
+
+//@attached(body)
+//macro ChangeObserving() = #externalMacro(module: "FlexMacros", type: "ChangeObservingMacro")
 
 import SwiftUI
 

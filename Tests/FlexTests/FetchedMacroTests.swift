@@ -48,6 +48,7 @@ final class FetchedTests: XCTestCase {
     }
 }
 
+nonisolated(unsafe)
 private let macros: [String: Macro.Type] = [
     "Fetched": FetchedMacro.self,
 ]

@@ -182,6 +182,7 @@ final class FeatureTests: XCTestCase {
 //    }
 //}
 
+nonisolated(unsafe)
 let testMacros: [String: Macro.Type] = [
     "Outlet": OutletMacro.self,
     "Feature": FeatureMacro.self,

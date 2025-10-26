@@ -34,6 +34,18 @@ struct FeatureMacroDiagnostic: DiagnosticMessage {
         severity: .error
     )
     
+    static let notAVariable = FeatureMacroDiagnostic(
+        message: "The attribute can only be applied to a variable",
+        diagnosticID: MessageID(domain: domain, id: "notAVariable"),
+        severity: .error
+    )
+    
+    static let supportsMaxOneModifier = FeatureMacroDiagnostic(
+        message: "Currently only supports zero or one modifier like `public` or `private`.",
+        diagnosticID: MessageID(domain: domain, id: "supportsMaxOneModifier"),
+        severity: .error
+    )
+    
     private static let domain = "com.dohle.flex.macros.feature"
 }
 

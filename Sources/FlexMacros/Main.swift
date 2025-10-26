@@ -16,6 +16,9 @@ struct FlexPlugin: CompilerPlugin {
         PresentationMacro.self,
         ActionMacro.self,
         FetchedMacro.self,
+        FeatureViewMacro.self,
+        OnChangeMacro.self,
+//        ChangeObservingMacro.self,
 //        DestinationMacro.self,
     ]
 }
