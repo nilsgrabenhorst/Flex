@@ -12,11 +12,11 @@ import SwiftDiagnostics
 import SwiftUI
 
 public enum OnChangeMacro: PeerMacro {
-    public static func expansion(of node: SwiftSyntax.AttributeSyntax, providingPeersOf declaration: some SwiftSyntax.DeclSyntaxProtocol, in context: some SwiftSyntaxMacros.MacroExpansionContext) throws -> [SwiftSyntax.DeclSyntax] {
+    public static func expansion(of node: SwiftSyntax.AttributeSyntax,
+                                 providingPeersOf declaration: some SwiftSyntax.DeclSyntaxProtocol,
+                                 in context: some SwiftSyntaxMacros.MacroExpansionContext) throws -> [SwiftSyntax.DeclSyntax] {
         return []
     }
-    
-    
 }
 
 public enum FeatureViewMacro { }
@@ -185,32 +185,6 @@ extension FeatureViewMacro: MemberAttributeMacro {
         
         return [
             AttributeSyntax(stringLiteral: "@ChangeObserving")
-        ]
-    }
-}
-
-public enum UpdatingMacro {}
-
-extension UpdatingMacro: PeerMacro {
-    public static func expansion(of node: SwiftSyntax.AttributeSyntax,
-                                 providingPeersOf declaration: some SwiftSyntax.DeclSyntaxProtocol,
-                                 in context: some SwiftSyntaxMacros.MacroExpansionContext) throws -> [SwiftSyntax.DeclSyntax] {
-//        guard let variableDecl = declaration.as(VariableDeclSyntax.self) else {
-//            context.diagnose(Diagnostic(node: declaration, message: FeatureMacroDiagnostic.notAVariable))
-//            return []
-//        }
-//        guard let binding: PatternBindingSyntax = variableDecl.bindings.first else {
-//            fatalError("Expected a single binding in \(variableDecl)")
-//        }
-//        guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier else {
-//            fatalError("Expected an identifier pattern with the property name.")
-//        }
-//        let name = identifier.text
-              
-        return [
-//            """
-//            private var _\(raw: name)KeyPath: Writable
-//            """
         ]
     }
 }

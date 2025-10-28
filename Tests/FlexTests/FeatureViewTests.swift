@@ -31,7 +31,6 @@ final class FeatureViewTests: XCTestCase {
         @State var name = "name"
     
         var presentation: some View {
-            _ = viewModel.test()
             Text("test")
         }
     }
@@ -60,6 +59,13 @@ final class FeatureViewTests: XCTestCase {
             extension TestView: FeatureView {
                 public var body: some View {
                     presentation
+                    .onChange(of: counter) { _, newValue in
+                        viewModel.counter = newValue
+                    }
+                    .onChange(of: name) { _, newValue in
+                        viewModel.name = newValue
+                    }
+            
                 }
             }
             """#,
@@ -71,5 +77,5 @@ final class FeatureViewTests: XCTestCase {
 @MainActor
 private let macros: [String: Macro.Type] = [
     "FeatureView": FeatureViewMacro.self,
-    "Updating": UpdatingMacro.self,
+    "OnChange": OnChangeMacro.self,
 ]
