@@ -61,13 +61,10 @@ private struct OnChangeDefinition {
     var destinationPath: KeyPathComponentListSyntax { keyPath.components }
 }
 
-// MARK: - Peer
-extension FeatureViewMacro: PeerMacro {
-    public static func expansion(
-        of node: AttributeSyntax,
-        providingPeersOf declaration: some DeclSyntaxProtocol,
-        in context: some MacroExpansionContext
-    ) throws -> [DeclSyntax] {
+// MARK: - Extension
+extension FeatureViewMacro: ExtensionMacro {
+    
+    public static func expansion(of node: SwiftSyntax.AttributeSyntax, attachedTo declaration: some SwiftSyntax.DeclGroupSyntax, providingExtensionsOf type: some SwiftSyntax.TypeSyntaxProtocol, conformingTo protocols: [SwiftSyntax.TypeSyntax], in context: some SwiftSyntaxMacros.MacroExpansionContext) throws -> [SwiftSyntax.ExtensionDeclSyntax] {
         guard let structDecl = declaration.as(StructDeclSyntax.self) else {
             context.diagnose(
                 Diagnostic(
@@ -128,15 +125,15 @@ extension FeatureViewMacro: PeerMacro {
         
         let onChangeList = ExprListSyntax(onChangeModifiers)
         
-        return [
-            """
-            extension \(raw: name.text): FeatureView {
+        return try [
+            ExtensionDeclSyntax("extension \(name): SwiftUI.View") {
+                """
                 \(raw: accessControl)var body: some View {
                     presentation
                     \(onChangeList)
                 }
-            }
-            """
+                """
+            },
         ]
     }
 }

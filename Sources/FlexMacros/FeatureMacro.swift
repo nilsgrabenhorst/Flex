@@ -46,6 +46,12 @@ struct FeatureMacroDiagnostic: DiagnosticMessage {
         severity: .error
     )
     
+    static let initializerExpected = FeatureMacroDiagnostic(
+        message: "Could not find an initializer",
+        diagnosticID: MessageID(domain: domain, id: "initializerExpected"),
+        severity: .error
+    )
+    
     private static let domain = "com.dohle.flex.macros.feature"
 }
 

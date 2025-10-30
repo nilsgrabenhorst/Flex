@@ -1,5 +1,24 @@
 import Flex
 import SwiftUI
+import Observation
+
+@Observable
+class ViewModel {
+    var counter: Int = 0
+    var name = ""
+    init() {}
+}
+
+//@FeatureView
+public struct TestView: View {
+    var counter = 42
+    @FeatureState
+    var viewModel = ViewModel()
+
+    public var body: some View {
+        Text("test")
+    }
+}
 
 //@Feature
 //@MainActor

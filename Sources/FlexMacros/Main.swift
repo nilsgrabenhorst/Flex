@@ -18,6 +18,7 @@ struct FlexPlugin: CompilerPlugin {
         FetchedMacro.self,
         FeatureViewMacro.self,
         OnChangeMacro.self,
+        FeatureStateMacro.self,
 //        ChangeObservingMacro.self,
 //        DestinationMacro.self,
     ]
