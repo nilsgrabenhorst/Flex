@@ -81,7 +81,7 @@ extension FeatureViewMacro: ExtensionMacro {
         
         let onChangeDefinitions: [OnChangeDefinition] = structDecl.memberBlock.onChangeDefinitions
         
-        let name = structDecl.name
+        let name = structDecl.name.trimmed
         
         let modifiers: DeclModifierListSyntax = structDecl.modifiers
         
@@ -126,7 +126,7 @@ extension FeatureViewMacro: ExtensionMacro {
         let onChangeList = ExprListSyntax(onChangeModifiers)
         
         return try [
-            ExtensionDeclSyntax("extension \(name): SwiftUI.View") {
+            ExtensionDeclSyntax("extension \(name): Flex.FeatureView") {
                 """
                 \(raw: accessControl)var body: some View {
                     presentation

@@ -11,7 +11,41 @@ import SwiftSyntaxMacros
 import SwiftDiagnostics
 import SwiftUI
 
-//public enum ChangeObservingMacro {}
+public enum ChangeObservingMacro {}
+
+// MARK: - Accessor
+
+/*
+extension ChangeObservingMacro: AccessorMacro {
+    public static func expansion(
+        of node: SwiftSyntax.AttributeSyntax,
+        providingAccessorsOf declaration: some SwiftSyntax.DeclSyntaxProtocol,
+        in context: some SwiftSyntaxMacros.MacroExpansionContext
+    ) throws -> [SwiftSyntax.AccessorDeclSyntax] {
+        
+        guard let varDecl = declaration.as(VariableDeclSyntax.self),
+              let binding = varDecl.bindings.first,
+              let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier.trimmed
+        else {
+            return []
+        }
+        
+//        guard let initializer = binding.initializer?.value
+//        else {
+//            context.diagnose(Diagnostic(node: declaration, message: FeatureMacroDiagnostic.initializerExpected))
+//            return []
+//        }
+        
+        return [
+            """
+            set {
+                Text("Hurz!!!")
+            }
+            """
+        ]
+    }
+}
+ */
 
 // MARK: - Peer
 //extension ChangeObservingMacro: PeerMacro {
@@ -44,7 +78,7 @@ import SwiftUI
 ///
 /// - Warning Body macros currently don't work for variables
 ///   We could manually attach `@ChangeObserving` to the getter of the `var`, but only if it's written explicitly with the `get { ... }` syntax.
-///   Nobody does that for `body` properties of `View`s though—everybody uses the shorthand syntax. We cannot "upgrade" the shorthand
+///   Nobody is going to do that for `body` properties of `View`s though—everybody uses the shorthand syntax. We cannot "upgrade" the shorthand
 ///   syntax to the full getter syntax with our macro, and we also have no way to use a macro to add another macro annotation to the expanded
 ///   getter.
 ///

@@ -24,14 +24,15 @@ public protocol Feature: AnyObject {
     var view: V { get }
     var presentation: Presentation { get }
 }
+ */
 
 @MainActor
 public protocol FeatureView: View {
-    associatedtype F: Feature
-    var feature: F { get }
-    init(feature: F)
+    associatedtype Presentation: View
+    var presentation: Presentation { get }
 }
 
+/*
 @MainActor
 public protocol PresentationView: View {
     associatedtype F: Feature

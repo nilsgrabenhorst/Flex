@@ -30,7 +30,7 @@ final class FeatureViewTests: XCTestCase {
         @OnChange(update: \viewModel.name)
         @State var name = "name"
     
-        var presentation: some View {
+        public var presentation: some View {
             Text("test")
         }
     }
@@ -51,12 +51,12 @@ final class FeatureViewTests: XCTestCase {
                 @State var counter = 0
                 @State var name = "name"
             
-                var presentation: some View {
+                public var presentation: some View {
                     Text("test")
                 }
             }
             
-            extension TestView: FeatureView {
+            extension TestView: Flex.FeatureView {
                 public var body: some View {
                     presentation
                     .onChange(of: counter) { _, newValue in

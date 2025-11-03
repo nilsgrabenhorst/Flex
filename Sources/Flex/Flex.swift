@@ -44,6 +44,7 @@ public macro FeatureState() = #externalMacro(module: "FlexMacros", type: "Featur
 public macro OnChange<ViewModel, T>(update keyPath: WritableKeyPath<ViewModel, T>) = #externalMacro(module: "FlexMacros", type: "OnChangeMacro")
 
 //@attached(body)
+//@attached(accessor, names: named(get))
 //macro ChangeObserving() = #externalMacro(module: "FlexMacros", type: "ChangeObservingMacro")
 
 import SwiftUI
