@@ -25,6 +25,7 @@ private struct OnChangeDefinition {
     init?(variable: VariableDeclSyntax, onChangeAttribute: AttributeSyntax) {
         guard
             let argument = onChangeAttribute.arguments?.as(LabeledExprListSyntax.self)?.first?.expression,
+//            let memberAccess = argument.as(MemberAccessExprSyntax.self)
             let keyPath = argument.as(KeyPathExprSyntax.self)
         else {
             assertionFailure("Could not find keyPath in @OnChange argument")
@@ -48,16 +49,18 @@ private struct OnChangeDefinition {
         self.variable = variable
         self.onChangeAttribute = onChangeAttribute
         self.keyPath = keyPath
-        self.destinationRoot = root.name.text
+//        self.memberAccess = memberAccess
+//        self.destinationRoot = root.name.text
     }
     
     let variable: VariableDeclSyntax
     let onChangeAttribute: AttributeSyntax
     let identifier: IdentifierPatternSyntax
     let keyPath: KeyPathExprSyntax
+//    let memberAccess: MemberAccessExprSyntax
     
     var sourceName: String { identifier.trimmedDescription }
-    let destinationRoot: String
+//    let destinationRoot: String
     var destinationPath: KeyPathComponentListSyntax { keyPath.components }
 }
 
@@ -92,7 +95,7 @@ extension FeatureViewMacro: ExtensionMacro {
             
             let codeBlockItemList = CodeBlockItemListSyntax([
                                 """
-                                    \(raw: definition.destinationRoot)\(definition.destinationPath) = newValue
+                                    feature\(definition.destinationPath) = newValue
                                 """
             ])
             let oldValueParameter = ClosureShorthandParameterSyntax(leadingTrivia: .space, name: .identifier("_"), trailingComma: .commaToken())
@@ -172,16 +175,13 @@ extension FeatureViewMacro: MemberAttributeMacro {
         providingAttributesFor member: some SwiftSyntax.DeclSyntaxProtocol,
         in context: some SwiftSyntaxMacros.MacroExpansionContext
     ) throws -> [SwiftSyntax.AttributeSyntax] {
-        guard let variableDecl = member.as(VariableDeclSyntax.self)
-        else {
-            return []
+        if let funcDecl = member.as(FunctionDeclSyntax.self),
+           funcDecl.name.text == "makeFeature"
+        {
+            return [
+                AttributeSyntax(stringLiteral: "@FeatureState")
+            ]
         }
-        guard variableDecl.identifier?.text == "body" else {
-            return []
-        }
-        
-        return [
-            AttributeSyntax(stringLiteral: "@ChangeObserving")
-        ]
+        return []
     }
 }

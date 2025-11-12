@@ -31,17 +31,25 @@ public macro Action() = #externalMacro(module: "FlexMacros", type: "ActionMacro"
 //public macro Destination() = #externalMacro(module: "FlexMacros", type: "DestinationMacro")
 
 @attached(extension,
-          conformances: View,
+          conformances: FeatureView,
           names: named(body))
 @attached(memberAttribute)
 public macro FeatureView() = #externalMacro(module: "FlexMacros", type: "FeatureViewMacro")
 
-@attached(peer, names: suffixed(BoxState), suffixed(Box), prefixed(`$`))
-@attached(accessor, names: named(get))
+@attached(peer,
+          names: named(featureBox),
+                 named(_featureBox),
+                 named($featureBox),
+                 named(feature),
+                 named($feature)
+)
+//@attached(body)
+//@attached(accessor, names: named(get))
 public macro FeatureState() = #externalMacro(module: "FlexMacros", type: "FeatureStateMacro")
 
 @attached(peer)
-public macro OnChange<ViewModel, T>(update keyPath: WritableKeyPath<ViewModel, T>) = #externalMacro(module: "FlexMacros", type: "OnChangeMacro")
+//public macro OnChange<T>(update keyPath: T) = #externalMacro(module: "FlexMacros", type: "OnChangeMacro")
+public macro OnChange<F, T>(update keyPath: WritableKeyPath<F, T>) = #externalMacro(module: "FlexMacros", type: "OnChangeMacro")
 
 //@attached(body)
 //@attached(accessor, names: named(get))

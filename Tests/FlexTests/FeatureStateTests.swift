@@ -16,22 +16,14 @@ final class FeatureStateTests: XCTestCase {
     
     let sample =
     """
-    class ViewModel {
-        var counter: Int
-        var name = ""
-        init(counter: Int) {
-            self.counter = counter
-        }
-    }
+    class ViewModel {}
     
-    @FeatureView
     public struct TestView {
         var counter = 42
-        @FeatureState
-        var viewModel: ViewModel = ViewModel(counter: counter)
     
-        var presentation: some View {
-            Text("test")
+        @FeatureState
+        func makeFeature() -> ViewModel {
+            ViewModel()
         }
     }
     """
@@ -40,49 +32,32 @@ final class FeatureStateTests: XCTestCase {
     func testSimpleExpansionShouldBeCorrect() async throws {
         let expected =
         """
-        class ViewModel {
-            var counter: Int
-            var name = ""
-            init(counter: Int) {
-                self.counter = counter
-            }
-        }
+        class ViewModel {}
+        
         public struct TestView {
             var counter = 42
-            var viewModel: ViewModel {
-                get {
-                    guard let viewModel = viewModelBox.value else {
-                        let viewModel = ViewModel(counter: counter)
-                        self.viewModelBox.value = viewModel
-                        return viewModel
-                    }
-                    return viewModel
+        
+            func makeFeature() -> ViewModel {
+                ViewModel()
+            }
+        
+            var feature: ViewModel {
+                guard let feature = featureBox.value else {
+                    let feature = makeFeature()
+                    featureBox.value = feature
+                    return feature
                 }
+                return feature
             }
         
-            private var viewModelBoxState = State(initialValue: Box<ViewModel?>())
+            @State private var featureBox = Box<ViewModel?>()
         
-            private var viewModelBox: Box<ViewModel?> {
-                viewModelBoxState.wrappedValue
-            }
-        
-            var $viewModel: Binding<ViewModel> {
+            var $feature: Binding<ViewModel> {
                 Binding {
-                    viewModel
+                    feature
                 } set: { newValue in
-                    self.viewModelBox.value = newValue
+                    self.featureBox.value = newValue
                 }
-            }
-        
-            var presentation: some View {
-                Text("test")
-            }
-        }
-        
-        extension TestView : SwiftUI.View {
-            public var body: some View {
-                presentation
-        
             }
         }
         """

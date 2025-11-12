@@ -24,11 +24,15 @@ final class FeatureViewTests: XCTestCase {
     public struct TestView {
         var viewModel: ViewModel
     
-        @OnChange(update: \viewModel.counter)
+        @OnChange(update: viewModel.counter)
         @State var counter = 0
     
-        @OnChange(update: \viewModel.name)
+        @OnChange(update: viewModel.name)
         @State var name = "name"
+    
+        public func makeFeature() -> ViewModel {
+            ViewModel()
+        }
     
         public var presentation: some View {
             Text("test")
@@ -50,6 +54,11 @@ final class FeatureViewTests: XCTestCase {
                 var viewModel: ViewModel
                 @State var counter = 0
                 @State var name = "name"
+                @FeatureState
+            
+                public func makeFeature() -> ViewModel {
+                    ViewModel()
+                }
             
                 public var presentation: some View {
                     Text("test")

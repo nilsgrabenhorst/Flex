@@ -52,6 +52,18 @@ struct FeatureMacroDiagnostic: DiagnosticMessage {
         severity: .error
     )
     
+    static let shouldHaveNoParameters = FeatureMacroDiagnostic(
+        message: "Function should have no parameters",
+        diagnosticID: MessageID(domain: domain, id: "shouldHaveNoParameters"),
+        severity: .error
+    )
+    
+    static let shouldReturnValue = FeatureMacroDiagnostic(
+        message: "Function should return a value",
+        diagnosticID: MessageID(domain: domain, id: "shouldReturnValue"),
+        severity: .error
+    )
+    
     private static let domain = "com.dohle.flex.macros.feature"
 }
 

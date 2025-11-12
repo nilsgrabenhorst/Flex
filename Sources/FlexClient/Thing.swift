@@ -3,19 +3,21 @@ import SwiftUI
 import Observation
 
 @Observable
-class ViewModel {
+public class ViewModel {
     var counter: Int = 0
     var name = ""
     init() {}
 }
 
-//@FeatureView
-public struct TestView: View {
+@FeatureView
+public struct TestView {
     var counter = 42
-    @FeatureState
-    var viewModel = ViewModel()
+    
+    public func makeFeature() -> ViewModel {
+        ViewModel()
+    }
 
-    public var body: some View {
+    public var presentation: some View {
         Text("test")
     }
 }

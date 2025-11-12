@@ -29,7 +29,9 @@ public protocol Feature: AnyObject {
 @MainActor
 public protocol FeatureView: View {
     associatedtype Presentation: View
+    associatedtype Feature
     var presentation: Presentation { get }
+    func makeFeature() -> Feature
 }
 
 /*
