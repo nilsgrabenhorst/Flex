@@ -64,7 +64,7 @@ public actor DatabaseMonitor {
         static let lastHistoryToken = "lastHistoryToken"
     }
     
-    let logger = Logger(subsystem: "Domain", category: "Database")
+    let logger = Logger(subsystem: "Flex/DatabaseMonitor", category: "Database")
     
     @DefaultsPersisted(key: Constants.lastHistoryToken)
     private var historyToken: DefaultHistoryToken?
@@ -129,9 +129,10 @@ public actor DatabaseMonitor {
                     let newTokenJSON: String = try! String(data: JSONEncoder().encode(transaction.token), encoding: .utf8)!
                     logger.info(
                     """
-                    Existing token: \(existingTokenJSON)
-                    Transaction token: \(newTokenJSON)
-                    \(transaction.token > token ? "new transaction" : "old transaction")
+                    findTransactions(after:) – \(#file):\(#line)
+                      Existing token: \(existingTokenJSON)
+                      Transaction token: \(newTokenJSON)
+                      → \(transaction.token > token ? "new transaction" : "old transaction")
                     """
                     )
                 }
