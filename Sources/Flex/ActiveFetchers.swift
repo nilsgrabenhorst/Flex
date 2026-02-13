@@ -9,12 +9,12 @@ import Foundation
 import FoundationSwings
 import SwiftData
 
-// OK to add @retroactive conformance because We own the `DefaultsValue`
+// OK to add @retroactive conformance because we own the `DefaultsValue`
 // protocol. Unlikely that Apple adds conformance in the future ;-)
 extension DefaultHistoryToken: @retroactive DefaultsValue {}
 
 @MainActor
-final class ActiveFetchers<Model: PersistentModel> {
+public final class ActiveFetchers<Model: PersistentModel> {
     struct WeakBox<T: AnyObject> {
         weak var value: T?
         init(_ value: T) {
@@ -22,22 +22,22 @@ final class ActiveFetchers<Model: PersistentModel> {
         }
     }
     
-    init() {}
+    public init() {}
     
     private var fetchers: [FetchDescriptorKey<Model>: WeakBox<Fetcher<Model>>] = [:]
     
-    func fetcher(for fetchDescriptor: FetchDescriptor<Model>) -> Fetcher<Model> {
+    func fetcher(for fetchDescriptor: FetchDescriptor<Model>, databaseMonitor: DatabaseMonitor) -> Fetcher<Model> {
         let key = FetchDescriptorKey(fetchDescriptor)
         if let existing = fetchers[key]?.value {
             return existing
         }
-        let newFetcher = Fetcher(fetchDescriptor: fetchDescriptor)
+        let newFetcher = Fetcher(fetchDescriptor: fetchDescriptor, databaseMonitor: databaseMonitor)
         fetchers[key] = WeakBox(newFetcher)
         return newFetcher
     }
     
-    subscript (_ fetchDescriptor: FetchDescriptor<Model>) -> Fetcher<Model> {
-        fetcher(for: fetchDescriptor)
+    public subscript (_ fetchDescriptor: FetchDescriptor<Model>, databaseMonitor: DatabaseMonitor) -> Fetcher<Model> {
+        fetcher(for: fetchDescriptor, databaseMonitor: databaseMonitor)
     }
 }
 

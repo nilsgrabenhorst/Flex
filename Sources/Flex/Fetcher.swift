@@ -18,8 +18,7 @@ import FactoryKit
 @MainActor
 @Observable
 public final class Fetcher<Model: PersistentModel> {
-    @ObservationIgnored @Injected(\.dataMonitor)
-    private var monitor
+    private let monitor: DatabaseMonitor
     
     @ObservationIgnored
     private var cancellables: Set<AnyCancellable> = []
@@ -29,10 +28,11 @@ public final class Fetcher<Model: PersistentModel> {
     private let logger = Logger(subsystem: "Domain", category: "\(Fetcher.self)")
     public private(set) var results: [Model] = []
     
-    public init(fetchDescriptor: FetchDescriptor<Model> = FetchDescriptor<Model>()) {
+    public init(fetchDescriptor: FetchDescriptor<Model> = FetchDescriptor<Model>(),
+                databaseMonitor: DatabaseMonitor) {
+        self.monitor = databaseMonitor
         self.fetchDescriptor = fetchDescriptor
-        @Injected(\.mainContext) var context
-        self.context = context
+        self.context = databaseMonitor.mainContext
         fetch()
         subscribe()
     }

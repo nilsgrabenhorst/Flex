@@ -16,6 +16,7 @@ public macro Presentation<F: Feature>() = #externalMacro(module: "FlexMacros", t
 @attached(peer)
 public macro Outlet() = #externalMacro(module: "FlexMacros", type: "OutletMacro")
 
+// TODO: This macro should either get a parameter for the context to use, or somehow grab the context from the enclosing scope...
 @attached(peer, names: suffixed(Fetcher))
 @attached(accessor)
 public macro Fetched<Model: PersistentModel>(_ fetchDescriptor: FetchDescriptor<Model> = .init()) = #externalMacro(module: "FlexMacros", type: "FetchedMacro")

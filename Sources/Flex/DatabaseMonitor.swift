@@ -12,48 +12,6 @@ import SwiftData
 import OSLog
 @unsafe @preconcurrency import Combine
 
-extension Container {
-    var modelContainer: Factory<ModelContainer> {
-        self {
-            fatalError("No modelContainer has been set. Call Flex.setModelContainer(_:) first.")
-        }
-    }
-    
-    @MainActor
-    var mainContext: Factory<ModelContext> {
-        self { @MainActor in
-            self.modelContainer.resolve().mainContext
-        }
-    }
-    
-    public var dataMonitor: Factory<DatabaseMonitor> {
-        self {
-            DatabaseMonitor()
-        }
-    }
-    
-    @MainActor
-    func activeFetchers<Model: PersistentModel>() -> Factory<ActiveFetchers<Model>> {
-        self { @MainActor in
-            ActiveFetchers<Model>()
-        }.cached
-    }
-    
-    @MainActor
-    func fetcher<Model: PersistentModel>() -> ParameterFactory<FetchDescriptor<Model>, Fetcher<Model>> {
-        self { @MainActor in
-            let activeFetchers: ActiveFetchers<Model> = self.activeFetchers().resolve()
-            return activeFetchers[$0]
-        }.unique
-    }
-}
-
-public func setModelContainer(_ modelContainer: ModelContainer) {
-    Container.shared.modelContainer.register {
-        modelContainer
-    }.cached
-}
-
 @ModelActor
 public actor DatabaseMonitor {
     deinit {
@@ -74,10 +32,14 @@ public actor DatabaseMonitor {
     @MainActor
     @Published public var transactions: [DefaultHistoryTransaction]?
     
-    init() {
-        @Injected(\.modelContainer) var container
+    public init(container: ModelContainer) {
         self.init(modelContainer: container)
         subscribeToPersistentStoreChangeNotifications()
+    }
+    
+    @MainActor
+    public var mainContext: ModelContext {
+        modelContainer.mainContext
     }
     
     public func deleteHistoryToken() {
