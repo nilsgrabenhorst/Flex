@@ -57,40 +57,40 @@ extension FeatureStateMacro: PeerMacro {
 //            ),
             
             """
-            var feature: \(raw: typeString) {
-                guard let feature = featureBox.value else {
-                    let newFeature = makeFeature()
-                    featureBox.value = newFeature
-                    return newFeature
+            var viewModel: \(raw: typeString) {
+                guard let viewModel = viewModelBox.value else {
+                    let newViewModel = makeViewModel()
+                    viewModelBox.value = newViewModel
+                    return newViewModel
                 }
-                return feature
+                return viewModel
             }
             """,
             
             """
             @MainActor
-            var $feature: Binding<\(raw: typeString)> {
+            var $viewModel: Binding<\(raw: typeString)> {
                 Binding {
-                    feature
-                } set: { [featureBox] newValue in
-                    featureBox.value = newValue
+                    viewModel
+                } set: { [viewModelBox] newValue in
+                    viewModelBox.value = newValue
                 }
             }
             """,
             
             """
-            private var _featureBox = State(initialValue: Box<\(raw: typeString)?>())
+            private var _viewModelBox = State(initialValue: Box<\(raw: typeString)?>())
             """,
             
             """
-            private var featureBox: Box<\(raw: typeString)?> {
-                _featureBox.wrappedValue
+            private var viewModelBox: Box<\(raw: typeString)?> {
+                _viewModelBox.wrappedValue
             }
             """,
             
             """
-            private var $featureBox: Binding<Box<\(raw: typeString)?>> {
-                _featureBox.projectedValue
+            private var $viewModelBox: Binding<Box<\(raw: typeString)?>> {
+                _viewModelBox.projectedValue
             }
             """,
         ]

@@ -20,21 +20,21 @@ final class FeatureViewTests: XCTestCase {
         var name = ""
     }
     
-    @FeatureView
+    @Feature
     public struct TestView {
-        var viewModel: ViewModel
+        private var viewModel: ViewModel
     
-        @OnChange(update: viewModel.counter)
+        @OnChange(update: \ViewModel.counter)
         @State var counter = 0
     
-        @OnChange(update: viewModel.name)
+        @OnChange(update: \ViewModel.name)
         @State var name = "name"
     
-        public func makeFeature() -> ViewModel {
+        private func makeViewModel() -> ViewModel {
             ViewModel()
         }
     
-        public var presentation: some View {
+        private var presentation: some View {
             Text("test")
         }
     }
@@ -51,21 +51,21 @@ final class FeatureViewTests: XCTestCase {
                 var name = ""
             }
             public struct TestView {
-                var viewModel: ViewModel
+                private var viewModel: ViewModel
                 @State var counter = 0
                 @State var name = "name"
                 @FeatureState
             
-                public func makeFeature() -> ViewModel {
+                private func makeViewModel() -> ViewModel {
                     ViewModel()
                 }
             
-                public var presentation: some View {
+                private var presentation: some View {
                     Text("test")
                 }
             }
             
-            extension TestView: Flex.FeatureView {
+            extension TestView: View {
                 public var body: some View {
                     presentation
                     .onChange(of: counter) { _, newValue in
@@ -85,6 +85,6 @@ final class FeatureViewTests: XCTestCase {
 
 @MainActor
 private let macros: [String: Macro.Type] = [
-    "FeatureView": FeatureViewMacro.self,
+    "Feature": FeatureMacro.self,
     "OnChange": OnChangeMacro.self,
 ]

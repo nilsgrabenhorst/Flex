@@ -5,7 +5,6 @@
 //  Created by Nils Grabenhorst on 28.10.25.
 //
 
-
 import XCTest
 import SwiftSyntaxMacros
 import SwiftSyntaxMacrosTestSupport
@@ -22,7 +21,7 @@ final class FeatureStateTests: XCTestCase {
         var counter = 42
     
         @FeatureState
-        func makeFeature() -> ViewModel {
+        func makeViewModel() -> ViewModel {
             ViewModel()
         }
     }
@@ -36,28 +35,36 @@ final class FeatureStateTests: XCTestCase {
         
         public struct TestView {
             var counter = 42
-        
-            func makeFeature() -> ViewModel {
+            func makeViewModel() -> ViewModel {
                 ViewModel()
             }
         
-            var feature: ViewModel {
-                guard let feature = featureBox.value else {
-                    let feature = makeFeature()
-                    featureBox.value = feature
-                    return feature
+            var viewModel: ViewModel {
+                guard let viewModel = viewModelBox.value else {
+                    let newViewModel = makeViewModel()
+                    viewModelBox.value = newViewModel
+                    return newViewModel
                 }
-                return feature
+                return viewModel
             }
         
-            @State private var featureBox = Box<ViewModel?>()
-        
-            var $feature: Binding<ViewModel> {
+            @MainActor
+            var $viewModel: Binding<ViewModel> {
                 Binding {
-                    feature
-                } set: { newValue in
-                    self.featureBox.value = newValue
+                    viewModel
+                } set: { [viewModelBox] newValue in
+                    viewModelBox.value = newValue
                 }
+            }
+        
+            private var _viewModelBox = State(initialValue: Box<ViewModel?>())
+        
+            private var viewModelBox: Box<ViewModel?> {
+                _viewModelBox.wrappedValue
+            }
+        
+            private var $viewModelBox: Binding<Box<ViewModel?>> {
+                _viewModelBox.projectedValue
             }
         }
         """
@@ -72,7 +79,7 @@ final class FeatureStateTests: XCTestCase {
 
 @MainActor
 private let macros: [String: Macro.Type] = [
-    "FeatureView": FeatureViewMacro.self,
+    "FeatureView": FeatureMacro.self,
     "OnChange": OnChangeMacro.self,
     "FeatureState": FeatureStateMacro.self,
 ]

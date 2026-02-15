@@ -9,7 +9,7 @@ public class ViewModel {
     init() {}
 }
 
-@FeatureView
+@Feature
 public struct TestView {
     var counter = 42
     

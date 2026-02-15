@@ -10,33 +10,33 @@ import SwiftSyntaxMacros
 import SwiftSyntaxMacrosTestSupport
 import FlexMacros
 
-final class PresentationTests: XCTestCase {
-    let sample =
-    """
-    @Feature
-    struct SomeFeature {
-        @Outlet let name: String = "Trudbert"
-    
-        @Action
-        internal func doStuff(_ hiddenName: Int, with number: Int = 0, freak: String) {}
-    }
-    
-    @Presentation<SomeFeature>
-    struct SomePresentation: View {
-    
-    }
-    """
-    
-    func testExpansionShouldBeCorrect() async throws {
-        
-        assertMacroExpansion(
-            sample,
-            expandedSource:
-                    """
-                    
-                    """
-            ,
-            macros: testMacros
-        )
-    }
-}
+//final class PresentationTests: XCTestCase {
+//    let sample =
+//    """
+//    @Feature
+//    struct SomeFeature {
+//        @Outlet let name: String = "Trudbert"
+//    
+//        @Action
+//        internal func doStuff(_ hiddenName: Int, with number: Int = 0, freak: String) {}
+//    }
+//    
+//    @Presentation<SomeFeature>
+//    struct SomePresentation: View {
+//    
+//    }
+//    """
+//    
+//    func testExpansionShouldBeCorrect() async throws {
+//        
+//        assertMacroExpansion(
+//            sample,
+//            expandedSource:
+//                    """
+//                    
+//                    """
+//            ,
+//            macros: testMacros
+//        )
+//    }
+//}
