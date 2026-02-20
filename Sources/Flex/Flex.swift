@@ -38,14 +38,15 @@ public macro Fetched() = #externalMacro(module: "FlexMacros", type: "FetchedMacr
 public macro Feature() = #externalMacro(module: "FlexMacros", type: "FeatureMacro")
 
 @attached(peer,
-          names: named(featureBox),
-                 named(_featureBox),
-                 named($featureBox),
-                 named(feature),
-                 named($feature)
+          names: named(viewModel),
+                 named($viewModel),
+                 named(_viewModelBox),
+                 named($viewModelBox),
+                 named(viewModelBox),
+                 named($ViewmodelBox)
 )
-@attached(body)
-@attached(accessor, names: named(get))
+//@attached(body)
+//@attached(accessor, names: named(get))
 public macro FeatureState() = #externalMacro(module: "FlexMacros", type: "FeatureStateMacro")
 
 @attached(peer)
@@ -57,24 +58,24 @@ public macro OnChange<F, T>(update keyPath: WritableKeyPath<F, T>) = #externalMa
 //macro ChangeObserving() = #externalMacro(module: "FlexMacros", type: "ChangeObservingMacro")
 
 
-//public extension View {
-//    @MainActor
-//    func sheet<Content: View>(
-//        destination content: Binding<Content?>,
-//        onDismiss: (() -> Void)? = nil
-//    ) -> some View {
-//        self.sheet(isPresented: Binding(get: {
-//            content.wrappedValue != nil
-//        }, set: { isPresented in
-//            if !isPresented {
-//                content.wrappedValue = nil
-//            }
-//        }), onDismiss: onDismiss, content: {
-//            content.wrappedValue
-//        })
-//    }
-//}
-//
+public extension View {
+    @MainActor
+    func sheet<Content: View>(
+        destination content: Binding<Content?>,
+        onDismiss: (() -> Void)? = nil
+    ) -> some View {
+        self.sheet(isPresented: Binding(get: {
+            content.wrappedValue != nil
+        }, set: { isPresented in
+            if !isPresented {
+                content.wrappedValue = nil
+            }
+        }), onDismiss: onDismiss, content: {
+            content.wrappedValue
+        })
+    }
+}
+
 //@propertyWrapper @MainActor
 //public struct Destination<V: View>: DynamicProperty {
 //    public typealias DestinationBinding = Binding<V?>

@@ -69,9 +69,79 @@ extension FeatureMacro: MemberMacro {
     public static func expansion(of node: AttributeSyntax,
                                  providingMembersOf declaration: some DeclGroupSyntax,
                                  in context: some MacroExpansionContext) throws -> [DeclSyntax] {
+        let members = declaration.memberBlock.members
+        let methods = members.compactMap { syntax in
+            syntax.decl.as(FunctionDeclSyntax.self)
+        }
+        let properties = members.compactMap { syntax in
+            syntax.decl.as(VariableDeclSyntax.self)
+        }
+        
+        if !methods.contains(where: { functionSyntax in
+            functionSyntax.name == .identifier("makeViewModel")
+            && functionSyntax.signature.parameterClause.parameters.count == 0
+            && (functionSyntax.signature.returnClause?.type != nil)
+        }) {
+            let diagnostic = FeatureMacroDiagnostic.shouldHaveMakeViewModelMethod
+            let fixItMessage = MakeViewModelFixitMessage(fixItID: diagnostic.diagnosticID)
+            let function = try FunctionDeclSyntax("private func makeViewModel() -> #<ViewModelType>#") {
+                "#<Create and return a view model>#"
+            }
+            var newMembers = members
+            if let newMember = MemberBlockItemSyntax(function) {
+                newMembers.append(newMember)
+                let fixIt = FixIt(message: fixItMessage, changes: [
+                    .replace(oldNode: Syntax(members), newNode: Syntax(newMembers))
+                ])
+                context.diagnose(
+                    Diagnostic(node: node, message: FeatureMacroDiagnostic.shouldHaveMakeViewModelMethod, fixIt: fixIt)
+                )
+            } else {
+                assertionFailure("Could not create FixIt")
+                context.diagnose(
+                    Diagnostic(node: node, message: FeatureMacroDiagnostic.shouldHaveMakeViewModelMethod)
+                )
+            }
+        }
+        
+        if !properties.contains(where: { variableDeclSyntax in
+            guard let binding =  variableDeclSyntax.bindings.first
+            else { return false }
+                
+            guard let identifierPattern = binding.pattern.as(IdentifierPatternSyntax.self)
+            else { return false }
+                
+            return identifierPattern.identifier == TokenSyntax("presentation")
+        }) {
+            let diagnostic = FeatureMacroDiagnostic.shouldHavePresentationProperty
+            let fixItMessage = MakeViewModelFixitMessage(fixItID: diagnostic.diagnosticID)
+            let function = try VariableDeclSyntax("private var presentation: some View") {
+                "#<Create and return a presentation view>#"
+            }
+            var newMembers = members
+            if let newMember = MemberBlockItemSyntax(function) {
+                newMembers.append(newMember)
+                let fixIt = FixIt(message: fixItMessage, changes: [
+                    .replace(oldNode: Syntax(members), newNode: Syntax(newMembers))
+                ])
+                context.diagnose(
+                    Diagnostic(node: node, message: FeatureMacroDiagnostic.shouldHaveMakeViewModelMethod, fixIt: fixIt)
+                )
+            } else {
+                assertionFailure("Could not create FixIt")
+                context.diagnose(
+                    Diagnostic(node: node, message: FeatureMacroDiagnostic.shouldHaveMakeViewModelMethod)
+                )
+            }
+        }
         
         return []
     }
+}
+
+private struct MakeViewModelFixitMessage: FixItMessage {
+    let message = "Add makeViewModel()"
+    let fixItID: SwiftDiagnostics.MessageID
 }
 
 // MARK: - Extension
@@ -247,6 +317,18 @@ struct FeatureMacroDiagnostic: DiagnosticMessage {
     static let shouldReturnValue = FeatureMacroDiagnostic(
         message: "Function should return a value",
         diagnosticID: MessageID(domain: domain, id: "shouldReturnValue"),
+        severity: .error
+    )
+    
+    static let shouldHaveMakeViewModelMethod = FeatureMacroDiagnostic(
+        message: "Missing `makeViewModel() -> ViewModelType` method",
+        diagnosticID: MessageID(domain: domain, id: "shouldHaveMakeViewModelMethod"),
+        severity: .error
+    )
+    
+    static let shouldHavePresentationProperty = FeatureMacroDiagnostic(
+        message: "Missing `presentation` property",
+        diagnosticID: MessageID(domain: domain, id: "shouldHavePresentationProperty"),
         severity: .error
     )
 }
