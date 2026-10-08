@@ -4,21 +4,26 @@ import Observation
 
 @Observable
 public class ViewModel {
-    var counter: Int = 0
-    var name = ""
-    init() {}
+    var counter: Int
+    var name: String
+    init(counter: Int = 0, name: String = "") {
+        self.counter = counter
+        self.name = name
+    }
 }
 
-@Feature
-public struct TestView {
-    var counter = 42
+public struct AnotherTestView: View {
+    let someNumber = 42
     
-    public func makeFeature() -> ViewModel {
-        ViewModel()
-    }
-
-    public var presentation: some View {
-        Text("test")
+    @LazyState
+    var model: ViewModel = ViewModel(counter: someNumber)
+    
+    public var body: some View {
+        VStack {
+            Text("Hello, world!")
+            Text("\(model.counter)")
+            TextField("Name", text: $model.name)
+        }
     }
 }
 

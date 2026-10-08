@@ -38,7 +38,8 @@ public final class Fetcher<Model: PersistentModel> {
     }
     
     private func subscribe() {
-        Task {
+        Task { [weak self] in
+            guard let self else { return }
             await monitor.$transactions
                 .compactMap(\.self)
                 .sink { [weak self] (transactions: [DefaultHistoryTransaction]) in

@@ -6,34 +6,66 @@
 //
 
 import Foundation
-import FoundationSwings
+import Infrastructure
 import FactoryKit
 import SwiftData
 import OSLog
 @unsafe @preconcurrency import Combine
 
-@ModelActor
-public actor DatabaseMonitor {
+public actor DatabaseMonitor: SwiftData.ModelActor {
     deinit {
         print("K THX BYE (Database monitor)")
     }
     
-    private enum Constants {
-        static let lastHistoryToken = "lastHistoryToken"
+    nonisolated private enum Constants {
+        nonisolated static let lastHistoryToken = "lastHistoryToken"
     }
     
     let logger = Logger(subsystem: "Flex/DatabaseMonitor", category: "Database")
     
-    @DefaultsPersisted(key: Constants.lastHistoryToken)
-    private var historyToken: DefaultHistoryToken?
+    // TODO: Separate history tokens per database
+    @DefaultsPersisted
+    private var persistedHistoryToken: DefaultHistoryToken?
+    private var inMemoryHistoryToken: DefaultHistoryToken?
+    private let isInMemory: Bool
+    
+    private var historyToken: DefaultHistoryToken? {
+        get {
+            isInMemory ? inMemoryHistoryToken : persistedHistoryToken
+        }
+        set {
+            if isInMemory {
+                inMemoryHistoryToken = newValue
+            } else {
+                persistedHistoryToken = newValue
+            }
+        }
+    }
     
     // TODO: Use AsyncAlgorithm's share() once available
     // See pitch at https://forums.swift.org/t/kickoff-of-a-new-season-of-development-for-asyncalgorithms-share/
     @MainActor
     @Published public var transactions: [DefaultHistoryTransaction]?
     
-    public init(container: ModelContainer) {
-        self.init(modelContainer: container)
+    public nonisolated let modelExecutor: any SwiftData.ModelExecutor
+    public nonisolated let modelContainer: SwiftData.ModelContainer
+    
+    public init(container: SwiftData.ModelContainer) {
+        let storeIdentifier: String
+        if let storePath = container.storePath {
+            self.isInMemory = false
+            storeIdentifier = storePath
+        } else {
+            self.isInMemory = true
+            storeIdentifier = "inMemory"
+        }
+        let key = "\(Constants.lastHistoryToken) \(storeIdentifier)"
+        self._persistedHistoryToken = DefaultsPersisted<DefaultHistoryToken?>(key: key)
+        
+        let modelContext = ModelContext(container)
+        self.modelExecutor = DefaultSerialModelExecutor(modelContext: modelContext)
+        self.modelContainer = container
+        
         subscribeToPersistentStoreChangeNotifications()
     }
     
@@ -49,7 +81,7 @@ public actor DatabaseMonitor {
     /// Subscribes to persistent history tracking notifications
     nonisolated func subscribeToPersistentStoreChangeNotifications(/* excludeAuthors: [String] = [] */) {
         Task { [weak self, logger] in
-            for await unsafe _ in NotificationCenter.default
+            for await _ in NotificationCenter.default
                 .notifications(named: .NSPersistentStoreRemoteChange)
                 .map({ _ in () }) {
                 do {
@@ -67,13 +99,14 @@ public actor DatabaseMonitor {
         logger.debug("Last token: \(String(describing: lastToken))")
         let transactions = findTransactions(after: lastToken)
         let (updatedModelIds, newHistoryToken) = findUpdatedModelIds(in: transactions)
+        logger.debug("\(updatedModelIds.count) updated ModelIDs")
         if let newHistoryToken {
             historyToken = newHistoryToken
         }
-        if let lastToken {
-            // TODO: Clean up without screwing up other monitors!
+        // TODO: Clean up without screwing up other monitors!
+//        if let lastToken {
 //            try deleteTransactions(before: lastToken)
-        }
+//        }
         Task { @MainActor in
             self.transactions = transactions
         }
@@ -122,7 +155,7 @@ public actor DatabaseMonitor {
     }
     
     private func findUpdatedModelIds(in transactions: [DefaultHistoryTransaction]) -> (Set<UUID>, DefaultHistoryToken?) {
-        let taskContext = ModelContext(modelContainer)
+//        let taskContext = ModelContext(modelContainer)
         var updatedModelIds: Set<UUID> = []
         logger.debug("\(transactions.count) Transactions:")
         for transaction in transactions {
@@ -158,5 +191,15 @@ public actor DatabaseMonitor {
             }
         }
         return (updatedModelIds, transactions.last?.token)
+    }
+}
+
+extension ModelContainer {
+    var storePath: String? {
+        let urls = configurations
+            .filter { !$0.isStoredInMemoryOnly }
+            .map(\.url)
+        assert(urls.count < 2)
+        return urls.first.flatMap { $0.absoluteString }
     }
 }

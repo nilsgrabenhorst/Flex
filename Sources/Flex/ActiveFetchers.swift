@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import FoundationSwings
+import Infrastructure
 import SwiftData
 
 // OK to add @retroactive conformance because we own the `DefaultsValue`

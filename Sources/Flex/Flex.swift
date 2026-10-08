@@ -53,9 +53,18 @@ public macro FeatureState() = #externalMacro(module: "FlexMacros", type: "Featur
 //public macro OnChange<T>(update keyPath: T) = #externalMacro(module: "FlexMacros", type: "OnChangeMacro")
 public macro OnChange<F, T>(update keyPath: WritableKeyPath<F, T>) = #externalMacro(module: "FlexMacros", type: "OnChangeMacro")
 
-//@attached(body)
-//@attached(accessor, names: named(get))
-//macro ChangeObserving() = #externalMacro(module: "FlexMacros", type: "ChangeObservingMacro")
+@attached(accessor)
+@attached(peer,
+          names:
+//            prefixed(_),
+            prefixed(`$`),
+            suffixed(Box),
+            suffixed(BoxState)
+)
+public macro LazyState() = #externalMacro(module: "FlexMacros", type: "LazyStateMacro")
+
+@freestanding(declaration)
+public macro ViewModelTest() = #externalMacro(module: "FlexMacros", type: "ViewModelTestMacro")
 
 
 public extension View {

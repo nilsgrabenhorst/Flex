@@ -18,5 +18,6 @@ struct FlexPlugin: CompilerPlugin {
         FetchedMacro.self,
         OnChangeMacro.self,
         FeatureStateMacro.self,
+        LazyStateMacro.self,
     ]
 }

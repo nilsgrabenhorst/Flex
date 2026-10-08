@@ -24,7 +24,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/hmlongco/Factory.git", from: "2.5.3"),
         .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "600.0.0-latest"),
-        .package(path: "../Swings"),
+        .package(path: "../Infrastructure"),
     ],
     targets: [
         // Macro implementation that performs the source transformation of a macro.
@@ -41,8 +41,8 @@ let package = Package(
             name: "Flex",
             dependencies: [
                 "FlexMacros",
+                "Infrastructure",
                 .product(name: "FactoryKit", package: "Factory"),
-                .product(name: "FoundationSwings", package: "Swings"),
             ],
             swiftSettings: targetSettings
         ),
